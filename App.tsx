@@ -3,7 +3,7 @@
 import React from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { Sidebar, Header, PageWrapper, AddLeadModal, AddActionModal, AssignLeadModal, FilterDrawer, AddDeveloperModal, AddProjectModal, AddUnitModal, UnitsFilterDrawer, AddOwnerModal, DealsFilterDrawer, EditUserModal, DeleteUserModal, AddCampaignModal, AddIntegrationAccountModal, ChangePasswordModal } from './components/index';
-import { ActivitiesPage, CampaignsPage, CreateDealPage, DashboardPage, DealsPage, EmployeesReportPage, IntegrationsPage, LeadsPage, LoginPage, MarketingReportPage, OwnersPage, PropertiesPage, SettingsPage, TeamsReportPage, TodosPage, UsersPage, ViewLeadPage } from './pages';
+import { ActivitiesPage, CampaignsPage, CreateDealPage, DashboardPage, DealsPage, EmployeesReportPage, IntegrationsPage, LeadsPage, LoginPage, MarketingReportPage, OwnersPage, ProfilePage, PropertiesPage, SettingsPage, TeamsReportPage, TodosPage, UsersPage, ViewLeadPage } from './pages';
 
 const CurrentPageContent = () => {
     const { currentPage } = useAppContext();
@@ -51,6 +51,8 @@ const CurrentPageContent = () => {
             return <IntegrationsPage />;
         case 'Settings':
             return <SettingsPage />;
+        case 'Profile':
+            return <ProfilePage />;
         // ... add other pages here
         default:
             return <PageWrapper title={currentPage}><div>Content for {currentPage}</div></PageWrapper>;

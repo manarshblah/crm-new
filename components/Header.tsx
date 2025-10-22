@@ -2,15 +2,15 @@
 
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
-import { MOCK_USERS } from '../constants';
 import { Button } from './Button';
 import { Input } from './Input';
 import { MoonIcon, SunIcon, SearchIcon, MenuIcon } from './icons';
 import { Dropdown, DropdownItem } from './Dropdown';
 
 export const Header = () => {
-    const { t, theme, setTheme, language, setLanguage, setIsSidebarOpen, setIsChangePasswordModalOpen } = useAppContext();
-    const user = MOCK_USERS[0];
+    const { t, theme, setTheme, language, setLanguage, setIsSidebarOpen, currentUser, setCurrentPage, setIsChangePasswordModalOpen } = useAppContext();
+
+    if (!currentUser) return null;
 
     return (
         <header className="sticky top-0 z-20 bg-white dark:bg-dark-card border-b dark:border-gray-800 p-4 flex justify-between items-center h-16">
@@ -32,14 +32,17 @@ export const Header = () => {
                 <Dropdown
                     trigger={
                         <div className="flex items-center gap-2 cursor-pointer">
-                            <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />
+                            <img src={currentUser.avatar} alt={currentUser.name} className="w-8 h-8 rounded-full" />
                             <div className="hidden sm:block">
-                                <p className="font-semibold text-sm">{user.name}</p>
-                                <p className="text-xs text-gray-500">{user.role}</p>
+                                <p className="font-semibold text-sm">{currentUser.name}</p>
+                                <p className="text-xs text-gray-500">{currentUser.role}</p>
                             </div>
                         </div>
                     }
                 >
+                    <DropdownItem onClick={() => setCurrentPage('Profile')}>
+                        {t('profile')}
+                    </DropdownItem>
                     <DropdownItem onClick={() => setIsChangePasswordModalOpen(true)}>
                         {t('changePassword')}
                     </DropdownItem>

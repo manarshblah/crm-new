@@ -17,3 +17,4 @@ export * from './EmployeesReportPage';
 export * from './MarketingReportPage';
 export * from './IntegrationsPage';
 export * from './SettingsPage';
+export * from './ProfilePage';

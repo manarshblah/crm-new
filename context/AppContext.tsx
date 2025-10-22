@@ -1,6 +1,37 @@
+
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Theme, Language, Page, Lead, User } from '../types';
-import { translations } from '../constants';
+import { translations, MOCK_USERS } from '../constants';
+
+// --- Helper Functions ---
+const hexToHsl = (hex: string): [number, number, number] | null => {
+    if (!hex) return null;
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!result) return null;
+
+    let r = parseInt(result[1], 16) / 255;
+    let g = parseInt(result[2], 16) / 255;
+    let b = parseInt(result[3], 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+
+    if (max === min) {
+        h = s = 0; // achromatic
+    } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+
+    return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+};
 
 // --- CONTEXT ---
 export interface AppContextType {
@@ -17,6 +48,8 @@ export interface AppContextType {
   setSelectedLead: (lead: Lead | null) => void;
   selectedUser: User | null;
   setSelectedUser: (user: User | null) => void;
+  currentUser: User | null;
+  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
   isAddLeadModalOpen: boolean;
@@ -29,6 +62,10 @@ export interface AppContextType {
   setIsFilterDrawerOpen: (isOpen: boolean) => void;
   checkedLeadIds: Set<number>;
   setCheckedLeadIds: React.Dispatch<React.SetStateAction<Set<number>>>;
+  primaryColor: string;
+  setPrimaryColor: (color: string) => void;
+  siteLogo: string | null;
+  setSiteLogo: (logo: string | null) => void;
 
   // Inventory states
   isUnitsFilterDrawerOpen: boolean;
@@ -81,7 +118,10 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [currentPage, setCurrentPage] = useState<Page>('Dashboard');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(MOCK_USERS[0]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [primaryColor, setPrimaryColor] = useState('#3b82f6'); // Default blue
+  const [siteLogo, setSiteLogo] = useState<string | null>(null);
   
   // Modals and drawers state
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
@@ -119,6 +159,10 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     if (storedTheme) setThemeState(storedTheme);
     const storedLang = localStorage.getItem('language') as Language;
     if (storedLang) setLanguage(storedLang);
+    const storedColor = localStorage.getItem('primaryColor');
+    if (storedColor) setPrimaryColor(storedColor);
+    const storedLogo = localStorage.getItem('siteLogo');
+    if (storedLogo) setSiteLogo(storedLogo);
 
     const handleResize = () => {
         if (window.innerWidth >= 1024) { // Tailwind's lg breakpoint
@@ -142,6 +186,33 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   }
 
+  const setAppColor = (color: string) => {
+    setPrimaryColor(color);
+    localStorage.setItem('primaryColor', color);
+  };
+
+  useEffect(() => {
+    const hsl = hexToHsl(primaryColor);
+    if(hsl) {
+        const [h, s, l] = hsl;
+        const root = document.documentElement;
+        root.style.setProperty('--primary', `${h} ${s}% ${l}%`);
+        root.style.setProperty('--primary-50', `${h} ${s}% ${l + (100 - l) * 0.95}%`);
+        root.style.setProperty('--primary-100', `${h} ${s}% ${l + (100 - l) * 0.9}%`);
+        root.style.setProperty('--primary-200', `${h} ${s}% ${l + (100 - l) * 0.8}%`);
+        root.style.setProperty('--primary-300', `${h} ${s}% ${l + (100 - l) * 0.7}%`);
+        root.style.setProperty('--primary-400', `${h} ${s}% ${l + (100 - l) * 0.6}%`);
+        root.style.setProperty('--primary-500', `${h} ${s}% ${l}%`);
+        root.style.setProperty('--primary-600', `${h} ${s}% ${l * 0.9}%`);
+        root.style.setProperty('--primary-700', `${h} ${s}% ${l * 0.8}%`);
+        root.style.setProperty('--primary-800', `${h} ${s}% ${l * 0.7}%`);
+        root.style.setProperty('--primary-900', `${h} ${s}% ${l * 0.6}%`);
+        // Foreground color logic
+        const foregroundColor = l > 50 ? '222.2 47.4% 11.2%' : '210 40% 98%';
+        root.style.setProperty('--primary-foreground', foregroundColor);
+    }
+  }, [primaryColor]);
+
   useEffect(() => {
     setTheme(theme);
     setLang(language);
@@ -160,12 +231,15 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     t, 
     selectedLead, setSelectedLead,
     selectedUser, setSelectedUser,
+    currentUser, setCurrentUser,
     isSidebarOpen, setIsSidebarOpen,
     isAddLeadModalOpen, setIsAddLeadModalOpen,
     isAddActionModalOpen, setIsAddActionModalOpen,
     isAssignLeadModalOpen, setIsAssignLeadModalOpen,
     isFilterDrawerOpen, setIsFilterDrawerOpen,
     checkedLeadIds, setCheckedLeadIds,
+    primaryColor, setPrimaryColor: setAppColor,
+    siteLogo, setSiteLogo,
     isUnitsFilterDrawerOpen, setIsUnitsFilterDrawerOpen,
     isAddDeveloperModalOpen, setIsAddDeveloperModalOpen,
     isAddProjectModalOpen, setIsAddProjectModalOpen,

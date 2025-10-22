@@ -544,6 +544,16 @@ export const translations = {
         enterNewPassword: "Enter new password",
         confirmNewPassword: "Confirm New Password",
         enterConfirmNewPassword: "Enter new password again",
+        // Profile
+        profile: "Profile",
+        profileSettings: "Profile Settings",
+        siteCustomization: "Site Customization",
+        primaryColor: "Primary Color",
+        siteLogo: "Site Logo",
+        profilePicture: "Profile Picture",
+        upload: "Upload",
+        security: "Security",
+        saveProfile: "Save Profile",
     },
     ar: {
         hello: "أهلاً بك في نظام ديل! 👋",
@@ -925,5 +935,15 @@ export const translations = {
         enterNewPassword: "أدخل كلمة المرور الجديدة",
         confirmNewPassword: "تأكيد كلمة المرور الجديدة",
         enterConfirmNewPassword: "أدخل كلمة المرور الجديدة مرة أخرى",
+        // Profile
+        profile: "الملف الشخصي",
+        profileSettings: "إعدادات الملف الشخصي",
+        siteCustomization: "تخصيص الموقع",
+        primaryColor: "اللون الأساسي",
+        siteLogo: "شعار الموقع",
+        profilePicture: "صورة الملف الشخصي",
+        upload: "رفع",
+        security: "الأمان",
+        saveProfile: "حفظ الملف الشخصي",
     }
 };

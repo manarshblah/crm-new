@@ -1,9 +1,10 @@
+
 export type Language = 'en' | 'ar';
 export type Theme = 'light' | 'dark';
 export type Page = 
   | 'Dashboard' | 'Leads' | 'Activities' | 'Inventory' | 'Deals' 
   | 'Users' | 'Marketing' | 'Todos' | 'Reports' | 'Integrations' 
-  | 'Settings' | 'ViewLead' | 'CreateDeal'
+  | 'Settings' | 'ViewLead' | 'CreateDeal' | 'Profile'
   // Sub-pages
   | 'All Leads' | 'Fresh Leads' | 'Cold Leads' | 'My Leads' | 'Rotated Leads'
   | 'Properties' | 'Owners'
