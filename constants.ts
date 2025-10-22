@@ -536,6 +536,14 @@ export const translations = {
         enterWhatsappNumber: "Enter WhatsApp number",
         connected: "Connected",
         disconnected: "Disconnected",
+        // ChangePasswordModal
+        changePassword: "Change Password",
+        currentPassword: "Current Password",
+        enterCurrentPassword: "Enter current password",
+        newPassword: "New Password",
+        enterNewPassword: "Enter new password",
+        confirmNewPassword: "Confirm New Password",
+        enterConfirmNewPassword: "Enter new password again",
     },
     ar: {
         hello: "أهلاً بك في نظام ديل! 👋",
@@ -909,5 +917,13 @@ export const translations = {
         enterWhatsappNumber: "أدخل رقم الواتساب",
         connected: "متصل",
         disconnected: "غير متصل",
+        // ChangePasswordModal
+        changePassword: "تغيير كلمة المرور",
+        currentPassword: "كلمة المرور الحالية",
+        enterCurrentPassword: "أدخل كلمة المرور الحالية",
+        newPassword: "كلمة المرور الجديدة",
+        enterNewPassword: "أدخل كلمة المرور الجديدة",
+        confirmNewPassword: "تأكيد كلمة المرور الجديدة",
+        enterConfirmNewPassword: "أدخل كلمة المرور الجديدة مرة أخرى",
     }
 };

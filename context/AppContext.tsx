@@ -59,6 +59,10 @@ export interface AppContextType {
   // Integrations states
   isAddIntegrationAccountModalOpen: boolean;
   setIsAddIntegrationAccountModalOpen: (isOpen: boolean) => void;
+  
+  // Change Password Modal state
+  isChangePasswordModalOpen: boolean;
+  setIsChangePasswordModalOpen: (isOpen: boolean) => void;
 }
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -105,6 +109,9 @@ export const AppProvider = ({ children }: AppProviderProps) => {
 
   // Integrations state
   const [isAddIntegrationAccountModalOpen, setIsAddIntegrationAccountModalOpen] = useState(false);
+  
+  // Change Password Modal state
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
 
   useEffect(() => {
@@ -169,6 +176,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     isDeleteUserModalOpen, setIsDeleteUserModalOpen,
     isAddCampaignModalOpen, setIsAddCampaignModalOpen,
     isAddIntegrationAccountModalOpen, setIsAddIntegrationAccountModalOpen,
+    isChangePasswordModalOpen, setIsChangePasswordModalOpen,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

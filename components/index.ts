@@ -1,4 +1,5 @@
 
+
 export * from './icons';
 export * from './Button';
 export * from './Card';
@@ -27,3 +28,4 @@ export * from './modals/DeleteUserModal';
 export * from './modals/AddCampaignModal';
 export * from './modals/AddIntegrationAccountModal';
 export * from './ToggleSwitch';
+export * from './modals/ChangePasswordModal';

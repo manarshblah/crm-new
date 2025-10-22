@@ -1,13 +1,15 @@
 
+
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MOCK_USERS } from '../constants';
 import { Button } from './Button';
 import { Input } from './Input';
 import { MoonIcon, SunIcon, SearchIcon, MenuIcon } from './icons';
+import { Dropdown, DropdownItem } from './Dropdown';
 
 export const Header = () => {
-    const { t, theme, setTheme, language, setLanguage, setIsSidebarOpen } = useAppContext();
+    const { t, theme, setTheme, language, setLanguage, setIsSidebarOpen, setIsChangePasswordModalOpen } = useAppContext();
     const user = MOCK_USERS[0];
 
     return (
@@ -27,13 +29,21 @@ export const Header = () => {
                 <Button variant="ghost" className="p-2 h-auto" onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}>
                     {language === 'en' ? 'AR' : 'EN'}
                 </Button>
-                <div className="flex items-center gap-2">
-                    <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />
-                    <div className="hidden sm:block">
-                        <p className="font-semibold text-sm">{user.name}</p>
-                        <p className="text-xs text-gray-500">{user.role}</p>
-                    </div>
-                </div>
+                <Dropdown
+                    trigger={
+                        <div className="flex items-center gap-2 cursor-pointer">
+                            <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />
+                            <div className="hidden sm:block">
+                                <p className="font-semibold text-sm">{user.name}</p>
+                                <p className="text-xs text-gray-500">{user.role}</p>
+                            </div>
+                        </div>
+                    }
+                >
+                    <DropdownItem onClick={() => setIsChangePasswordModalOpen(true)}>
+                        {t('changePassword')}
+                    </DropdownItem>
+                </Dropdown>
             </div>
         </header>
     );
