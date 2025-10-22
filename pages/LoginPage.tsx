@@ -7,6 +7,14 @@ import { Button, Input, EyeIcon, EyeOffIcon } from '../components/index';
 export const LoginPage = () => {
     const { setIsLoggedIn, t, language } = useAppContext();
     const [passwordVisible, setPasswordVisible] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleLogin = () => {
+        setIsLoading(true);
+        setTimeout(() => {
+            setIsLoggedIn(true);
+        }, 1500); // Simulate network delay
+    };
 
     return (
         <div className={`min-h-screen flex ${language === 'ar' ? 'font-arabic' : 'font-sans'}`}>
@@ -48,7 +56,7 @@ export const LoginPage = () => {
                            </button>
                         </div>
                         <div>
-                            <Button onClick={() => setIsLoggedIn(true)} className="w-full">
+                            <Button onClick={handleLogin} className="w-full" loading={isLoading}>
                                 {t('signIn')}
                             </Button>
                         </div>

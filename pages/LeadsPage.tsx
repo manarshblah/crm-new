@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MOCK_LEADS } from '../constants';
-import { PageWrapper, Button, Card, FilterIcon, PlusIcon, EyeIcon, WhatsappIcon, SearchIcon, Input } from '../components/index';
+import { PageWrapper, Button, Card, FilterIcon, PlusIcon, EyeIcon, WhatsappIcon, SearchIcon, Input, Loader } from '../components/index';
 import { Lead } from '../types';
 
 const leadStatusFilters: Lead['status'][] = ['All', 'Untouched', 'Touched', 'Following', 'Meeting', 'No Answer', 'Out Of Service'];
@@ -21,6 +21,12 @@ export const LeadsPage = () => {
         setCheckedLeadIds
     } = useAppContext();
     const [activeStatusFilter, setActiveStatusFilter] = useState<Lead['status']>('All');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleViewLead = (lead: Lead) => {
         setSelectedLead(lead);
@@ -77,6 +83,16 @@ export const LeadsPage = () => {
     };
     
     const isAllSelected = filteredLeads.length > 0 && checkedLeadIds.size === filteredLeads.length;
+
+    if (loading) {
+        return (
+            <PageWrapper title={pageTitle}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper 

@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MOCK_USERS } from '../constants';
-import { PageWrapper, Button, Card, Dropdown, DropdownItem, WhatsappIcon } from '../components/index';
+import { PageWrapper, Button, Card, Dropdown, DropdownItem, WhatsappIcon, Loader } from '../components/index';
 import { User } from '../types';
 
 const UserCard = ({ user }: { user: User }) => {
@@ -53,7 +53,23 @@ const UserCard = ({ user }: { user: User }) => {
 export const UsersPage = () => {
     const { t } = useAppContext();
     const [autoAssign, setAutoAssign] = useState(true);
+    const [loading, setLoading] = useState(true);
     const userCount = MOCK_USERS.length;
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (loading) {
+        return (
+            <PageWrapper title={`${t('users')}: ${userCount}`}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper

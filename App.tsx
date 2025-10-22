@@ -16,7 +16,7 @@ const CurrentPageContent = () => {
         case 'Cold Leads':
         case 'My Leads':
         case 'Rotated Leads':
-            return <LeadsPage />;
+            return <LeadsPage key={currentPage} />;
         case 'ViewLead':
             return <ViewLeadPage />;
         case 'Activities':
@@ -48,7 +48,7 @@ const CurrentPageContent = () => {
         case 'Facebook':
         case 'TikTok':
         case 'WhatsApp':
-            return <IntegrationsPage />;
+            return <IntegrationsPage key={currentPage} />;
         case 'Settings':
             return <SettingsPage />;
         case 'Profile':

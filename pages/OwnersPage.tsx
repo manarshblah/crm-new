@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MOCK_OWNERS } from '../constants';
-import { PageWrapper, Button, Card, PlusIcon, SearchIcon, Input } from '../components/index';
+import { PageWrapper, Button, Card, PlusIcon, SearchIcon, Input, Loader } from '../components/index';
 import { Owner } from '../types';
 
 const OwnersTable = ({ owners }: { owners: Owner[] }) => {
@@ -44,6 +44,22 @@ const OwnersTable = ({ owners }: { owners: Owner[] }) => {
 
 export const OwnersPage = () => {
     const { t, setIsAddOwnerModalOpen } = useAppContext();
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('owners')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper

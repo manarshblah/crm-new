@@ -9,6 +9,7 @@ export * from './PageWrapper';
 export * from './WeekLeadsChart';
 export * from './Header';
 export * from './Sidebar';
+export * from './Loader';
 
 // New components
 export * from './modals/AddActionModal';

@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MOCK_DEVELOPERS, MOCK_PROJECTS, MOCK_UNITS } from '../constants';
-import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Dropdown, DropdownItem } from '../components/index';
+import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Dropdown, DropdownItem, Loader } from '../components/index';
 import { Developer, Project, Unit } from '../types';
 
 type Tab = 'units' | 'projects' | 'developers';
@@ -119,6 +119,12 @@ export const PropertiesPage = () => {
         setIsAddUnitModalOpen,
     } = useAppContext();
     const [activeTab, setActiveTab] = useState<Tab>('units');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
     
     const pageActions = (
         <Dropdown trigger={
@@ -154,6 +160,16 @@ export const PropertiesPage = () => {
                 return null;
         }
     };
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('properties')} actions={pageActions}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper title={t('properties')} actions={pageActions}>

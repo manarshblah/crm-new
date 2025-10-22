@@ -1,13 +1,22 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 // FIX: Corrected component import path to avoid conflict with `components.tsx`.
-import { Card, PageWrapper, WeekLeadsChart, TargetIcon, UsersIcon } from '../components/index';
+import { Card, PageWrapper, WeekLeadsChart, TargetIcon, UsersIcon, Loader } from '../components/index';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { MOCK_USERS, MOCK_ACTIVITIES } from '../constants';
 
 export const DashboardPage = () => {
     const { t } = useAppContext();
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setLoading(false);
+        }, 1500); // Simulate 1.5s load time
+        return () => clearTimeout(timer);
+    }, []);
+
     const stats = [
         { title: t('todayNewLeads'), value: 0, icon: <TargetIcon className="w-8 h-8 text-primary"/> },
         { title: t('todayTouchedLeads'), value: 0, icon: <UsersIcon className="w-8 h-8 text-green-500"/> },
@@ -20,6 +29,16 @@ export const DashboardPage = () => {
 
     const topUsers = MOCK_USERS.slice(0, 3); // Get top 3 users for the list
     const latestFeedbacks = MOCK_ACTIVITIES.slice(0, 4); // Get latest 4 feedbacks
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('dashboard')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper title={t('dashboard')}>

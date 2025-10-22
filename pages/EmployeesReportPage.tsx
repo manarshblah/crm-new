@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { PageWrapper, Card, Input } from '../components/index';
+import React, { useState, useEffect } from 'react';
+import { PageWrapper, Card, Input, Loader } from '../components/index';
 import { MOCK_EMPLOYEE_REPORT_DATA } from '../constants';
 import { useAppContext } from '../context/AppContext';
 
@@ -45,6 +45,22 @@ const reportColumns = [
 export const EmployeesReportPage = () => {
     const { t } = useAppContext();
     const [leadType, setLeadType] = useState('all');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('employeesReport')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper

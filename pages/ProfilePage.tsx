@@ -1,8 +1,8 @@
 
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { PageWrapper, Card, Input, Button } from '../components/index';
+import { PageWrapper, Card, Input, Button, Loader } from '../components/index';
 
 const Label = ({ children, htmlFor }: { children: React.ReactNode; htmlFor: string }) => (
     <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{children}</label>
@@ -43,6 +43,12 @@ export const ProfilePage = () => {
         setSiteLogo,
         setIsChangePasswordModalOpen
     } = useAppContext();
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
 
     const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,6 +85,16 @@ export const ProfilePage = () => {
             logoInputRef.current.value = "";
         }
     };
+    
+    if (loading) {
+        return (
+            <PageWrapper title={t('profile')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper title={t('profile')}>

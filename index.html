@@ -42,7 +42,16 @@
                   DEFAULT: 'hsl(224, 71%, 4%)',
                   foreground: 'hsl(210, 40%, 98%)',
               }
-            }
+            },
+            animation: {
+              'bounce-loader': 'bounce-loader 1.2s infinite ease-in-out',
+            },
+            keyframes: {
+              'bounce-loader': {
+                '0%, 40%, 100%': { transform: 'scaleY(0.4)' },
+                '20%': { transform: 'scaleY(1.0)' },
+              },
+            },
           }
         }
       }

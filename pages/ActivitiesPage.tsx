@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MOCK_ACTIVITIES, MOCK_USERS } from '../constants';
-import { PageWrapper, Card } from '../components/index';
+import { PageWrapper, Card, Loader } from '../components/index';
 import { Activity } from '../types';
 
 const FilterSelect = ({ id, children, value, onChange, className }: { id: string; children: React.ReactNode; value: string; onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void; className?: string }) => (
@@ -18,10 +18,26 @@ export const ActivitiesPage = () => {
     const [timePeriod, setTimePeriod] = useState('today');
     const [leadType, setLeadType] = useState('all');
     const [activityType, setActivityType] = useState<Activity['type'] | 'all'>('all');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
 
     // NOTE: Advanced filtering logic based on state can be implemented here.
     // For this implementation, we display all mock activities.
     const filteredActivities = MOCK_ACTIVITIES;
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('activities')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper

@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MOCK_CAMPAIGNS } from '../constants';
-import { PageWrapper, Button, Card, PlusIcon, SearchIcon, Input } from '../components/index';
+import { PageWrapper, Button, Card, PlusIcon, SearchIcon, Input, Loader } from '../components/index';
 import { Campaign } from '../types';
 
 const CampaignsTable = ({ campaigns, onSelectAll, onSelectOne, selectedIds }: { campaigns: Campaign[], onSelectAll: (e: React.ChangeEvent<HTMLInputElement>) => void, onSelectOne: (id: number) => void, selectedIds: Set<number> }) => {
@@ -62,6 +62,12 @@ export const CampaignsPage = () => {
     const { t, setIsAddCampaignModalOpen } = useAppContext();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCampaignIds, setSelectedCampaignIds] = useState<Set<number>>(new Set());
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
 
     const filteredCampaigns = useMemo(() => {
         return MOCK_CAMPAIGNS.filter(campaign => 
@@ -89,6 +95,16 @@ export const CampaignsPage = () => {
             setSelectedCampaignIds(new Set());
         }
     };
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('campaigns')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper

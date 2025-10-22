@@ -1,12 +1,32 @@
 
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { PageWrapper, Button, Card, Timeline, UserMinusIcon, UserPlusIcon, DealIcon, EditIcon, PlusIcon } from '../components/index';
+import { PageWrapper, Button, Card, Timeline, UserMinusIcon, UserPlusIcon, DealIcon, EditIcon, PlusIcon, Loader } from '../components/index';
 
 export const ViewLeadPage = () => {
     const { t, selectedLead, setIsAddActionModalOpen } = useAppContext();
-    if (!selectedLead) return <div>Lead not found</div>;
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, [selectedLead?.id]);
+
+    if (!selectedLead) {
+        return <PageWrapper title={t('leads')}><div>Lead not found</div></PageWrapper>;
+    }
+
+    if (loading) {
+        return (
+            <PageWrapper title={selectedLead.name}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
+
     return (
         <PageWrapper 
             title={selectedLead.name} 

@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MOCK_TODOS } from '../constants';
-import { PageWrapper, Card, Button, ClockIcon, UsersIcon, PhoneIcon, ListIcon, CheckIcon } from '../components/index';
+import { PageWrapper, Card, Button, ClockIcon, UsersIcon, PhoneIcon, ListIcon, CheckIcon, Loader } from '../components/index';
 import { Todo } from '../types';
 
 type FilterType = 'all' | Todo['type'];
@@ -25,6 +25,12 @@ export const TodosPage = () => {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [activeFilter, setActiveFilter] = useState<FilterType>('all');
     const [weekDays, setWeekDays] = useState<Date[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
 
     useEffect(() => {
         const getWeekDays = (startDate: Date): Date[] => {
@@ -64,6 +70,16 @@ export const TodosPage = () => {
         });
         return counts;
     }, [todos]);
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('todos')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper title={t('todos')}>

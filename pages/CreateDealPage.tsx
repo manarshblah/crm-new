@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { PageWrapper, Card, Input, Button, PlusIcon } from '../components/index';
+import { PageWrapper, Card, Input, Button, PlusIcon, Loader } from '../components/index';
 import { MOCK_PROJECTS, MOCK_UNITS, MOCK_LEADS, MOCK_USERS } from '../constants';
 
 const Label = ({ children, htmlFor }: { children: React.ReactNode; htmlFor: string }) => (
@@ -17,6 +17,23 @@ const Select = ({ id, children, className }: { id: string; children: React.React
 
 export const CreateDealPage = () => {
     const { t, setCurrentPage, setIsAddLeadModalOpen } = useAppContext();
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('createNewDeal')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
+
     return (
         <PageWrapper title={t('createNewDeal')}>
             <Card>

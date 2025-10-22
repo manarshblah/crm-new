@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { PageWrapper, Card, Input } from '../components/index';
+import React, { useState, useEffect } from 'react';
+import { PageWrapper, Card, Input, Loader } from '../components/index';
 import { MOCK_TEAMS } from '../constants';
 import { useAppContext } from '../context/AppContext';
 
@@ -14,6 +14,22 @@ export const TeamsReportPage = () => {
     const { t } = useAppContext();
     const [selectedTeam, setSelectedTeam] = useState('all');
     const [leadType, setLeadType] = useState('all');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('teamsReport')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper

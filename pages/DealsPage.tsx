@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MOCK_DEALS } from '../constants';
-import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input } from '../components/index';
+import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Loader } from '../components/index';
 import { Deal } from '../types';
 
 const DealsTable = ({ deals }: { deals: Deal[] }) => {
@@ -51,6 +51,22 @@ const DealsTable = ({ deals }: { deals: Deal[] }) => {
 
 export const DealsPage = () => {
     const { t, setCurrentPage, setIsDealsFilterDrawerOpen } = useAppContext();
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('deals')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper

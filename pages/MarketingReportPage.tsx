@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { PageWrapper, Card, Input } from '../components/index';
+import React, { useState, useEffect } from 'react';
+import { PageWrapper, Card, Input, Loader } from '../components/index';
 import { MOCK_CAMPAIGNS } from '../constants';
 import { useAppContext } from '../context/AppContext';
 
@@ -13,6 +13,22 @@ const FilterSelect = ({ id, children, value, onChange, className }: { id: string
 export const MarketingReportPage = () => {
     const { t } = useAppContext();
     const [selectedCampaign, setSelectedCampaign] = useState('all');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('marketingReport')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper

@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // FIX: Corrected component import path to avoid conflict with `components.tsx`.
-import { PageWrapper } from '../components/index';
+import { PageWrapper, Loader } from '../components/index';
 import { LeadsSettings } from './settings/LeadsSettings';
 import { ChannelsSettings } from './settings/ChannelsSettings';
 import { StagesSettings } from './settings/StagesSettings';
@@ -13,6 +13,12 @@ type SettingsTab = 'Leads' | 'Channels' | 'Stages' | 'Statuses';
 export const SettingsPage = () => {
     const { t } = useAppContext();
     const [activeTab, setActiveTab] = useState<SettingsTab>('Leads');
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
 
     const renderContent = () => {
         switch (activeTab) {
@@ -23,6 +29,16 @@ export const SettingsPage = () => {
             default: return null;
         }
     };
+
+    if (loading) {
+        return (
+            <PageWrapper title={t('settings')}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper title={t('settings')}>

@@ -1,9 +1,9 @@
 
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { MOCK_CONNECTED_ACCOUNTS } from '../constants';
-import { PageWrapper, Card, Button, PlusIcon, FacebookIcon, TikTokIcon, WhatsappIcon, TrashIcon, SettingsIcon } from '../components/index';
+import { PageWrapper, Card, Button, PlusIcon, FacebookIcon, TikTokIcon, WhatsappIcon, TrashIcon, SettingsIcon, Loader } from '../components/index';
 import { Page } from '../types';
 
 type PlatformDetails = {
@@ -46,17 +46,35 @@ const getPlatformDetails = (currentPage: Page): PlatformDetails | null => {
 
 export const IntegrationsPage = () => {
     const { t, currentPage, setIsAddIntegrationAccountModalOpen } = useAppContext();
-    const platform = getPlatformDetails(currentPage);
+    const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 1000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const platform = getPlatformDetails(currentPage);
+    
     if (!platform) {
         return <PageWrapper title={t('integrations')}><div>Unknown integration platform.</div></PageWrapper>;
     }
     
     const { name, icon: Icon, accounts } = platform;
+    const pageTitle = `${name} ${t('integration')}`;
+
+    if (loading) {
+        return (
+            <PageWrapper title={pageTitle}>
+                <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 200px)' }}>
+                    <Loader variant="primary" className="h-12"/>
+                </div>
+            </PageWrapper>
+        );
+    }
 
     return (
         <PageWrapper
-            title={`${name} ${t('integration')}`}
+            title={pageTitle}
             actions={
                 <Button onClick={() => setIsAddIntegrationAccountModalOpen(true)}>
                     <PlusIcon className="w-4 h-4" /> {t('addNewAccount')}
