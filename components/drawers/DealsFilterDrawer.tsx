@@ -1,10 +1,12 @@
+
 import React from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { MOCK_USERS, MOCK_PROJECTS, MOCK_CAMPAIGNS } from '../../constants';
 import { XIcon } from '../icons';
 import { Button } from '../Button';
 
-const FilterSection = ({ title, children }: { title: string, children: React.ReactNode }) => (
+// FIX: Made children optional to fix missing children prop error.
+const FilterSection = ({ title, children }: { title: string, children?: React.ReactNode }) => (
     <details className="group" open>
         <summary className="flex cursor-pointer list-none items-center justify-between py-2 text-sm font-medium text-gray-900 dark:text-white">
             {title}
@@ -18,11 +20,13 @@ const FilterSection = ({ title, children }: { title: string, children: React.Rea
     </details>
 );
 
-const FilterLabel = ({ children, htmlFor }: { children: React.ReactNode; htmlFor: string }) => (
+// FIX: Made children optional to fix missing children prop error.
+const FilterLabel = ({ children, htmlFor }: { children?: React.ReactNode; htmlFor: string }) => (
     <label htmlFor={htmlFor} className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{children}</label>
 );
 
-const FilterSelect = ({ id, children }: { id: string; children: React.ReactNode }) => (
+// FIX: Made children optional to fix missing children prop error.
+const FilterSelect = ({ id, children }: { id: string; children?: React.ReactNode }) => (
     <select id={id} className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
         {children}
     </select>

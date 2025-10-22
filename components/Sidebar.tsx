@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 // FIX: Import translations to be used for type casting.
@@ -25,23 +27,27 @@ const toCamelCase = (str: string) => {
     }).replace(/\s+/g, '');
 };
 
-const SidebarItem = ({ name, icon: Icon, isActive, hasSubItems, isSubItem, isOpen, onClick }: SidebarItemProps) => (
-    <a
-        href="#"
-        onClick={(e) => { e.preventDefault(); onClick(); }}
-        className={`flex items-center p-2 rounded-lg transition-colors duration-200 ${
-            isSubItem ? 'ps-8' : ''
-        } ${
-            isActive 
-            ? 'bg-primary text-primary-foreground' 
-            : 'hover:bg-gray-200 dark:hover:bg-gray-700'
-        }`}
-    >
-        {Icon && <Icon className="w-5 h-5 me-3" />}
-        <span className="flex-1 whitespace-nowrap">{name}</span>
-        {hasSubItems && <ChevronDownIcon className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
-    </a>
-);
+const SidebarItem = ({ name, icon: Icon, isActive, hasSubItems, isSubItem, isOpen, onClick }: SidebarItemProps) => {
+    const activeClass = isActive
+        ? isSubItem
+            ? 'bg-active-sub text-white'
+            : 'bg-primary text-white'
+        : 'hover:bg-gray-200 dark:hover:bg-gray-700';
+    
+    return (
+        <a
+            href="#"
+            onClick={(e) => { e.preventDefault(); onClick(); }}
+            className={`flex items-center p-2 rounded-lg transition-colors duration-200 ${
+                isSubItem ? 'ps-8' : ''
+            } ${activeClass}`}
+        >
+            {Icon && <Icon className="w-5 h-5 me-3" />}
+            <span className="flex-1 whitespace-nowrap">{name}</span>
+            {hasSubItems && <ChevronDownIcon className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
+        </a>
+    );
+};
 
 
 export const Sidebar = () => {
@@ -68,6 +74,7 @@ export const Sidebar = () => {
                     {siteLogo && <img src={siteLogo} alt="Site Logo" className="h-10 object-contain" />}
                     <h1 className="text-xl font-bold text-primary">Deal CRM</h1>
                 </div>
+                {/* FIX: The Button component requires children. */}
                 <Button variant="ghost" className="lg:hidden p-1 -mr-2 rtl:-mr-0 rtl:-ml-2" onClick={() => setIsSidebarOpen(false)}>
                     <XIcon className="h-6 w-6" />
                 </Button>
@@ -91,13 +98,16 @@ export const Sidebar = () => {
                                     {item.subItems.map(sub => {
                                         const subItemNameKey = toCamelCase(sub) as keyof typeof translations.en;
                                         return (
-                                            <SidebarItem
-                                                key={sub}
-                                                name={t(subItemNameKey)}
-                                                isSubItem
-                                                isActive={currentPage === sub}
-                                                onClick={() => handleNavigation(sub)}
-                                            />
+                                            // FIX: The `key` prop is for React's internal use and should not be passed to the component.
+                                            // FIX: Wrapped SidebarItem in a div with a key to resolve TypeScript error about key prop not being in SidebarItemProps.
+                                            <div key={sub}>
+                                                <SidebarItem
+                                                    name={t(subItemNameKey)}
+                                                    isSubItem
+                                                    isActive={currentPage === sub}
+                                                    onClick={() => handleNavigation(sub)}
+                                                />
+                                            </div>
                                         );
                                     })}
                                 </div>
@@ -113,6 +123,7 @@ export const Sidebar = () => {
                     isActive={currentPage === 'Settings'}
                     onClick={() => handleNavigation('Settings')}
                 />
+                {/* FIX: The Button component requires children. */}
                  <Button variant="ghost" className="w-full justify-start mt-2" onClick={() => setIsLoggedIn(false)}>
                     <LogOutIcon className="w-5 h-5 me-3" />
                     <span className="flex-1 whitespace-nowrap">{t('logout')}</span>

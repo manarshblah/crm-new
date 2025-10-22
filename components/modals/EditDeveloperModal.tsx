@@ -1,21 +1,36 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
 import { Button } from '../Button';
+import { Developer } from '../../types';
 
 // FIX: Made children optional to fix missing children prop error.
 const Label = ({ children, htmlFor }: { children?: React.ReactNode; htmlFor: string }) => (
     <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{children}</label>
 );
 
-export const AddDeveloperModal = () => {
-    const { isAddDeveloperModalOpen, setIsAddDeveloperModalOpen, t, addDeveloper } = useAppContext();
-    const [formState, setFormState] = useState({
+export const EditDeveloperModal = () => {
+    const { isEditDeveloperModalOpen, setIsEditDeveloperModalOpen, t, updateDeveloper, editingDeveloper, setEditingDeveloper } = useAppContext();
+    const [formState, setFormState] = useState<Omit<Developer, 'id' | 'code'>>({
         name: '',
         logo: '',
     });
+
+    useEffect(() => {
+        if (editingDeveloper) {
+            setFormState({
+                name: editingDeveloper.name,
+                logo: editingDeveloper.logo,
+            });
+        }
+    }, [editingDeveloper]);
+
+    const handleClose = () => {
+        setIsEditDeveloperModalOpen(false);
+        setEditingDeveloper(null);
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
@@ -24,14 +39,19 @@ export const AddDeveloperModal = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formState.name) return;
-        addDeveloper(formState);
-        setIsAddDeveloperModalOpen(false);
-        setFormState({ name: '', logo: '' });
+        if (editingDeveloper) {
+            updateDeveloper({
+                ...editingDeveloper,
+                ...formState,
+            });
+        }
+        handleClose();
     };
 
+    if (!editingDeveloper) return null;
+
     return (
-        <Modal isOpen={isAddDeveloperModalOpen} onClose={() => setIsAddDeveloperModalOpen(false)} title={t('addNewDeveloper')}>
+        <Modal isOpen={isEditDeveloperModalOpen} onClose={handleClose} title={`${t('edit')} ${t('developer')}`}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <Label htmlFor="name">{t('developerName')}</Label>
@@ -41,8 +61,9 @@ export const AddDeveloperModal = () => {
                     <Label htmlFor="logo">{t('logo')}</Label>
                     <Input id="logo" placeholder="Enter image URL" value={formState.logo} onChange={handleChange} />
                 </div>
-                <div className="flex justify-end">
-                    <Button type="submit">{t('submit')}</Button>
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="secondary" onClick={handleClose}>{t('cancel')}</Button>
+                    <Button type="submit">{t('saveChanges')}</Button>
                 </div>
             </form>
         </Modal>

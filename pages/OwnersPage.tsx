@@ -1,11 +1,12 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { MOCK_OWNERS } from '../constants';
-import { PageWrapper, Button, Card, PlusIcon, SearchIcon, Input, Loader } from '../components/index';
+import { PageWrapper, Button, Card, PlusIcon, SearchIcon, Input, Loader, EditIcon, TrashIcon } from '../components/index';
 import { Owner } from '../types';
 
-const OwnersTable = ({ owners }: { owners: Owner[] }) => {
+const OwnersTable = ({ owners, onEdit, onDelete }: { owners: Owner[], onEdit: (owner: Owner) => void, onDelete: (id: number) => void }) => {
     const { t } = useAppContext();
     return (
         <div className="overflow-x-auto">
@@ -28,7 +29,16 @@ const OwnersTable = ({ owners }: { owners: Owner[] }) => {
                             <td className="px-6 py-4">{owner.district}</td>
                             <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{owner.name}</td>
                             <td className="px-6 py-4">{owner.phone}</td>
-                            <td className="px-6 py-4">{/* Actions column as requested */}</td>
+                            <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                    <Button variant="ghost" className="p-1 h-auto" onClick={() => onEdit(owner)}>
+                                        <EditIcon className="w-4 h-4" />
+                                    </Button>
+                                    <Button variant="ghost" className="p-1 h-auto text-red-500 hover:bg-red-100 dark:hover:bg-red-900" onClick={() => onDelete(owner.id)}>
+                                        <TrashIcon className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            </td>
                         </tr>
                     )) : (
                         <tr>
@@ -43,13 +53,24 @@ const OwnersTable = ({ owners }: { owners: Owner[] }) => {
 
 
 export const OwnersPage = () => {
-    const { t, setIsAddOwnerModalOpen } = useAppContext();
+    const { t, setIsAddOwnerModalOpen, owners, deleteOwner, setEditingOwner, setIsEditOwnerModalOpen } = useAppContext();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const timer = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timer);
     }, []);
+
+    const handleEdit = (owner: Owner) => {
+        setEditingOwner(owner);
+        setIsEditOwnerModalOpen(true);
+    };
+
+    const handleDelete = (id: number) => {
+        if(window.confirm(t('confirmDelete'))) {
+            deleteOwner(id);
+        }
+    };
 
     if (loading) {
         return (
@@ -74,7 +95,7 @@ export const OwnersPage = () => {
             }
         >
             <Card>
-                <OwnersTable owners={MOCK_OWNERS} />
+                <OwnersTable owners={owners} onEdit={handleEdit} onDelete={handleDelete} />
             </Card>
         </PageWrapper>
     );

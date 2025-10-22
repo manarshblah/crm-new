@@ -64,6 +64,11 @@ export interface Deal {
   closedBy?: number; // user ID
   startDate?: string;
   closedDate?: string;
+  discountPercentage?: number;
+  discountAmount?: number;
+  salesCommissionPercentage?: number;
+  salesCommissionAmount?: number;
+  description?: string;
 }
 
 export interface Activity {
@@ -137,7 +142,7 @@ export interface Owner {
 export interface Channel {
     id: number;
     name: string;
-    type: 'Web' | 'Social' | 'Direct';
+    type: string;
     priority: 'High' | 'Medium' | 'Low';
 }
 
@@ -154,7 +159,7 @@ export interface Status {
     id: number;
     name: string;
     description: string;
-    category: 'In Progress' | 'Completed' | 'On Hold';
+    category: 'Active' | 'Inactive' | 'Follow Up' | 'Closed';
     color: string;
     isDefault?: boolean;
     isHidden?: boolean;

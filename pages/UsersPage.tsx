@@ -86,7 +86,10 @@ export const UsersPage = () => {
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {MOCK_USERS.map(user => (
-                    <UserCard key={user.id} user={user} />
+                    // FIX: Wrapped UserCard in a div with a key to resolve TypeScript error about key prop not being in UserCard's props.
+                    <div key={user.id}>
+                        <UserCard user={user} />
+                    </div>
                 ))}
             </div>
         </PageWrapper>

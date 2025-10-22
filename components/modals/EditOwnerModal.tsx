@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
@@ -17,14 +17,30 @@ const Select = ({ id, children, value, onChange }: { id: string; children?: Reac
     </select>
 );
 
-export const AddOwnerModal = () => {
-    const { isAddOwnerModalOpen, setIsAddOwnerModalOpen, t, addOwner } = useAppContext();
+export const EditOwnerModal = () => {
+    const { isEditOwnerModalOpen, setIsEditOwnerModalOpen, t, updateOwner, editingOwner, setEditingOwner } = useAppContext();
     const [formState, setFormState] = useState({
         name: '',
         phone: '',
         city: 'Riyadh',
         district: '',
     });
+
+    useEffect(() => {
+        if (editingOwner) {
+            setFormState({
+                name: editingOwner.name,
+                phone: editingOwner.phone,
+                city: editingOwner.city,
+                district: editingOwner.district,
+            });
+        }
+    }, [editingOwner]);
+
+    const handleClose = () => {
+        setIsEditOwnerModalOpen(false);
+        setEditingOwner(null);
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
@@ -33,14 +49,19 @@ export const AddOwnerModal = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        addOwner(formState);
-        setIsAddOwnerModalOpen(false);
-        // Reset form
-        setFormState({ name: '', phone: '', city: 'Riyadh', district: '' });
+        if (editingOwner) {
+            updateOwner({
+                ...editingOwner,
+                ...formState,
+            });
+        }
+        handleClose();
     };
 
+    if (!editingOwner) return null;
+
     return (
-        <Modal isOpen={isAddOwnerModalOpen} onClose={() => setIsAddOwnerModalOpen(false)} title={t('addNewOwner')}>
+        <Modal isOpen={isEditOwnerModalOpen} onClose={handleClose} title={`${t('edit')} ${t('ownerName')}`}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <Label htmlFor="name">{t('ownerName')}</Label>
@@ -62,8 +83,9 @@ export const AddOwnerModal = () => {
                     <Label htmlFor="district">{t('ownerDistrict')}</Label>
                     <Input id="district" placeholder={t('enterSpecificDistrict')} value={formState.district} onChange={handleChange} />
                 </div>
-                <div className="flex justify-end">
-                    <Button type="submit">{t('submit')}</Button>
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="secondary" onClick={handleClose}>{t('cancel')}</Button>
+                    <Button type="submit">{t('saveChanges')}</Button>
                 </div>
             </form>
         </Modal>

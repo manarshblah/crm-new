@@ -6,7 +6,8 @@ import { MOCK_STAGES } from '../../constants';
 import { Stage } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 
-const Label = ({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) => (
+// FIX: Made children optional to fix missing children prop error.
+const Label = ({ children, htmlFor }: { children?: React.ReactNode; htmlFor?: string }) => (
     <label htmlFor={htmlFor} className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{children}</label>
 );
 

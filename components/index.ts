@@ -1,5 +1,4 @@
 
-
 export * from './icons';
 export * from './Button';
 export * from './Card';
@@ -23,10 +22,13 @@ export * from './modals/AddDeveloperModal';
 export * from './modals/AddProjectModal';
 export * from './modals/AddUnitModal';
 export * from './modals/AddOwnerModal';
+export * from './modals/EditOwnerModal';
+export * from './modals/EditDeveloperModal';
+export * from './modals/EditProjectModal';
 export * from './drawers/DealsFilterDrawer';
 export * from './modals/EditUserModal';
 export * from './modals/DeleteUserModal';
 export * from './modals/AddCampaignModal';
-export * from './modals/AddIntegrationAccountModal';
+export * from './modals/ManageIntegrationAccountModal';
 export * from './ToggleSwitch';
 export * from './modals/ChangePasswordModal';

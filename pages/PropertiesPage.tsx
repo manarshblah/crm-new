@@ -1,13 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { MOCK_DEVELOPERS, MOCK_PROJECTS, MOCK_UNITS } from '../constants';
 import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Dropdown, DropdownItem, Loader } from '../components/index';
 import { Developer, Project, Unit } from '../types';
 
 type Tab = 'units' | 'projects' | 'developers';
 
-const DevelopersTable = ({ developers, onUpdate }: { developers: Developer[], onUpdate: (dev: Developer) => void }) => {
+const DevelopersTable = ({ developers, onUpdate, onDelete }: { developers: Developer[], onUpdate: (dev: Developer) => void, onDelete: (id: number) => void }) => {
     const { t } = useAppContext();
     return (
         <div className="overflow-x-auto">
@@ -24,12 +23,12 @@ const DevelopersTable = ({ developers, onUpdate }: { developers: Developer[], on
                     {developers.map(dev => (
                         <tr key={dev.id} className="bg-white dark:bg-dark-card border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                             <td className="px-6 py-4">{dev.code}</td>
-                            <td className="px-6 py-4"><img src={dev.logo} alt={dev.name} className="w-8 h-8 rounded-full" /></td>
+                            <td className="px-6 py-4"><img src={dev.logo} alt={dev.name} className="w-8 h-8 rounded-full object-cover" /></td>
                             <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{dev.name}</td>
                             <td className="px-6 py-4">
                                 <div className="flex gap-2">
                                     <Button variant="secondary" onClick={() => onUpdate(dev)}>{t('update')}</Button>
-                                    <Button variant="danger">{t('delete')}</Button>
+                                    <Button variant="danger" onClick={() => onDelete(dev.id)}>{t('delete')}</Button>
                                 </div>
                             </td>
                         </tr>
@@ -40,7 +39,7 @@ const DevelopersTable = ({ developers, onUpdate }: { developers: Developer[], on
     );
 };
 
-const ProjectsTable = ({ projects }: { projects: Project[] }) => {
+const ProjectsTable = ({ projects, onUpdate, onDelete }: { projects: Project[], onUpdate: (proj: Project) => void, onDelete: (id: number) => void }) => {
     const { t } = useAppContext();
     return (
         <div className="overflow-x-auto">
@@ -67,8 +66,8 @@ const ProjectsTable = ({ projects }: { projects: Project[] }) => {
                             <td className="px-6 py-4">{proj.paymentMethod}</td>
                             <td className="px-6 py-4">
                                 <div className="flex gap-2">
-                                    <Button variant="secondary">{t('update')}</Button>
-                                    <Button variant="danger">{t('delete')}</Button>
+                                    <Button variant="secondary" onClick={() => onUpdate(proj)}>{t('update')}</Button>
+                                    <Button variant="danger" onClick={() => onDelete(proj.id)}>{t('delete')}</Button>
                                 </div>
                             </td>
                         </tr>
@@ -117,6 +116,15 @@ export const PropertiesPage = () => {
         setIsAddDeveloperModalOpen,
         setIsAddProjectModalOpen,
         setIsAddUnitModalOpen,
+        units,
+        projects,
+        developers,
+        deleteDeveloper,
+        setEditingDeveloper,
+        setIsEditDeveloperModalOpen,
+        deleteProject,
+        setEditingProject,
+        setIsEditProjectModalOpen
     } = useAppContext();
     const [activeTab, setActiveTab] = useState<Tab>('units');
     const [loading, setLoading] = useState(true);
@@ -138,6 +146,28 @@ export const PropertiesPage = () => {
         </Dropdown>
     );
 
+    const handleDeleteDeveloper = (id: number) => {
+        if (window.confirm(t('confirmDelete'))) {
+            deleteDeveloper(id);
+        }
+    };
+
+    const handleUpdateDeveloper = (dev: Developer) => {
+        setEditingDeveloper(dev);
+        setIsEditDeveloperModalOpen(true);
+    };
+    
+    const handleDeleteProject = (id: number) => {
+        if (window.confirm(t('confirmDelete'))) {
+            deleteProject(id);
+        }
+    };
+
+    const handleUpdateProject = (proj: Project) => {
+        setEditingProject(proj);
+        setIsEditProjectModalOpen(true);
+    };
+
     const renderContent = () => {
         switch (activeTab) {
             case 'units':
@@ -149,13 +179,13 @@ export const PropertiesPage = () => {
                                 <FilterIcon className="w-4 h-4"/> {t('filter')}
                              </Button>
                         </div>
-                        <UnitsTable units={MOCK_UNITS} />
+                        <UnitsTable units={units} />
                     </Card>
                 );
             case 'projects':
-                return <Card><ProjectsTable projects={MOCK_PROJECTS} /></Card>;
+                return <Card><ProjectsTable projects={projects} onUpdate={handleUpdateProject} onDelete={handleDeleteProject} /></Card>;
             case 'developers':
-                return <Card><DevelopersTable developers={MOCK_DEVELOPERS} onUpdate={() => setIsAddDeveloperModalOpen(true)} /></Card>;
+                return <Card><DevelopersTable developers={developers} onUpdate={handleUpdateDeveloper} onDelete={handleDeleteDeveloper} /></Card>;
             default:
                 return null;
         }

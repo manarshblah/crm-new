@@ -1,11 +1,11 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { MOCK_DEALS } from '../constants';
 import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Loader } from '../components/index';
 import { Deal } from '../types';
 
-const DealsTable = ({ deals }: { deals: Deal[] }) => {
+const DealsTable = ({ deals, onDelete }: { deals: Deal[], onDelete: (id: number) => void }) => {
     const { t } = useAppContext();
     return (
         <div className="overflow-x-auto">
@@ -39,7 +39,7 @@ const DealsTable = ({ deals }: { deals: Deal[] }) => {
                             </td>
                             <td className="px-6 py-4">{deal.value.toLocaleString()}</td>
                             <td className="px-6 py-4">
-                                <Button variant="danger" className="p-1 h-auto text-xs">{t('delete')}</Button>
+                                <Button variant="danger" className="p-1 h-auto text-xs" onClick={() => onDelete(deal.id)}>{t('delete')}</Button>
                             </td>
                         </tr>
                     ))}
@@ -50,13 +50,19 @@ const DealsTable = ({ deals }: { deals: Deal[] }) => {
 }
 
 export const DealsPage = () => {
-    const { t, setCurrentPage, setIsDealsFilterDrawerOpen } = useAppContext();
+    const { t, setCurrentPage, setIsDealsFilterDrawerOpen, deals, deleteDeal } = useAppContext();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const timer = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timer);
     }, []);
+
+    const handleDelete = (id: number) => {
+        if (window.confirm(t('confirmDelete'))) {
+            deleteDeal(id);
+        }
+    };
 
     if (loading) {
         return (
@@ -84,7 +90,7 @@ export const DealsPage = () => {
             }
         >
             <Card>
-                <DealsTable deals={MOCK_DEALS} />
+                <DealsTable deals={deals} onDelete={handleDelete} />
             </Card>
         </PageWrapper>
     );

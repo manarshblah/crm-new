@@ -1,7 +1,7 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { MOCK_LEADS } from '../constants';
 import { PageWrapper, Button, Card, FilterIcon, PlusIcon, EyeIcon, WhatsappIcon, SearchIcon, Input, Loader } from '../components/index';
 import { Lead } from '../types';
 
@@ -18,7 +18,8 @@ export const LeadsPage = () => {
         setIsAssignLeadModalOpen, 
         setIsFilterDrawerOpen,
         checkedLeadIds,
-        setCheckedLeadIds
+        setCheckedLeadIds,
+        leads: allLeads,
     } = useAppContext();
     const [activeStatusFilter, setActiveStatusFilter] = useState<Lead['status']>('All');
     const [loading, setLoading] = useState(true);
@@ -43,7 +44,7 @@ export const LeadsPage = () => {
     const pageTitle = t(pageTitleKey);
     
     const filteredLeads = useMemo(() => {
-        let leads = MOCK_LEADS;
+        let leads = allLeads;
         
         // 1. Filter by sidebar page type
         switch (currentPage) {
@@ -60,7 +61,7 @@ export const LeadsPage = () => {
         }
 
         return leads;
-    }, [currentPage, activeStatusFilter]);
+    }, [currentPage, activeStatusFilter, allLeads]);
 
     const handleCheckChange = (leadId: number, isChecked: boolean) => {
         setCheckedLeadIds(prev => {
@@ -108,14 +109,14 @@ export const LeadsPage = () => {
         >
             <div className="flex border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto">
                 {leadStatusFilters.map(status => {
-                    const count = status === 'All' ? MOCK_LEADS.length : MOCK_LEADS.filter(l => l.status === status).length;
+                    const count = status === 'All' ? allLeads.length : allLeads.filter(l => l.status === status).length;
                     return (
                         <button 
                             key={status}
                             onClick={() => setActiveStatusFilter(status)}
                             className={`px-4 py-2 text-sm font-medium whitespace-nowrap ${activeStatusFilter === status ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
                         >
-                           {status} ({count})
+                           {t(status.replace(' ', '').toLowerCase() as any) || status} ({count})
                         </button>
                     )
                 })}

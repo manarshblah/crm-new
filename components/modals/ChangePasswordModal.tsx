@@ -1,10 +1,12 @@
+
 import React from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
 import { Button } from '../Button';
 
-const Label = ({ children, htmlFor }: { children: React.ReactNode; htmlFor: string }) => (
+// FIX: Made children optional to fix missing children prop error.
+const Label = ({ children, htmlFor }: { children?: React.ReactNode; htmlFor: string }) => (
     <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{children}</label>
 );
 

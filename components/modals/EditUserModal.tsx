@@ -1,14 +1,17 @@
+
 import React from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
 import { Button } from '../Button';
 
-const Label = ({ children, htmlFor }: { children: React.ReactNode; htmlFor: string }) => (
+// FIX: Made children optional to fix missing children prop error.
+const Label = ({ children, htmlFor }: { children?: React.ReactNode; htmlFor: string }) => (
     <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{children}</label>
 );
 
-const Select = ({ id, children, defaultValue }: { id: string; children: React.ReactNode; defaultValue?: string }) => (
+// FIX: Made children optional to fix missing children prop error.
+const Select = ({ id, children, defaultValue }: { id: string; children?: React.ReactNode; defaultValue?: string }) => (
     <select id={id} defaultValue={defaultValue} className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
         {children}
     </select>

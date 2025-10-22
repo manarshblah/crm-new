@@ -1,10 +1,12 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 // FIX: Corrected component import path to avoid conflict with `components.tsx`.
 import { Card, PageWrapper, WeekLeadsChart, TargetIcon, UsersIcon, Loader } from '../components/index';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
-import { MOCK_USERS, MOCK_ACTIVITIES } from '../constants';
+import { MOCK_USERS, MOCK_ACTIVITIES, MOCK_LEADS } from '../constants';
 
 export const DashboardPage = () => {
     const { t } = useAppContext();
@@ -44,17 +46,20 @@ export const DashboardPage = () => {
         <PageWrapper title={t('dashboard')}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map(stat => (
-                    <Card key={stat.title}>
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
-                                {stat.icon}
+                    // FIX: Wrapped Card in a div with a key to resolve TypeScript error about key prop not being in CardProps.
+                    <div key={stat.title}>
+                        <Card>
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
+                                    {stat.icon}
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
+                                    <p className="text-2xl font-bold">{stat.value}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
-                                <p className="text-2xl font-bold">{stat.value}</p>
-                            </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </div>
                 ))}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
@@ -97,14 +102,38 @@ export const DashboardPage = () => {
                 </Card>
                 <Card>
                     <h2 className="text-lg font-semibold mb-4">{t('latestFeedbacks')}</h2>
-                    <div className="space-y-4">
-                        {latestFeedbacks.map(feedback => (
-                            <div key={feedback.id} className="text-sm">
-                                <p className="font-semibold">{feedback.lead}</p>
-                                <p className="text-gray-600 dark:text-gray-400">{feedback.notes}</p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{feedback.user} - {feedback.date}</p>
-                            </div>
-                        ))}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">{t('date')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('user')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('lead')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('stage')}</th>
+                                    <th scope="col" className="px-6 py-3">{t('lastFeedback')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {latestFeedbacks.map(feedback => {
+                                    const lead = MOCK_LEADS.find(l => l.name === feedback.lead);
+                                    return (
+                                        <tr key={feedback.id} className="bg-white dark:bg-dark-card border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                            <td className="px-6 py-4 whitespace-nowrap">{feedback.date}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap">{feedback.user}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap">{feedback.lead}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {lead && (
+                                                    <span className="bg-primary text-primary-foreground font-semibold px-2 py-1 rounded-full text-xs">
+                                                        {lead.lastStage}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4">{feedback.notes}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 </Card>
             </div>

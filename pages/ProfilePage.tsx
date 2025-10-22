@@ -1,10 +1,12 @@
 
 
+
 import React, { useRef, useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { PageWrapper, Card, Input, Button, Loader } from '../components/index';
 
-const Label = ({ children, htmlFor }: { children: React.ReactNode; htmlFor: string }) => (
+// FIX: Made children optional to fix missing children prop error.
+const Label = ({ children, htmlFor }: { children?: React.ReactNode; htmlFor: string }) => (
     <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{children}</label>
 );
 
@@ -39,6 +41,8 @@ export const ProfilePage = () => {
         setCurrentUser,
         primaryColor,
         setPrimaryColor,
+        activeSubPageColor,
+        setActiveSubPageColor,
         siteLogo,
         setSiteLogo,
         setIsChangePasswordModalOpen
@@ -121,21 +125,36 @@ export const ProfilePage = () => {
 
                 <Card>
                     <h2 className="text-xl font-semibold mb-4 border-b pb-2 dark:border-gray-700">{t('siteCustomization')}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                        <div>
-                            <Label htmlFor="primary-color">{t('primaryColor')}</Label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="color"
-                                    id="primary-color"
-                                    value={primaryColor}
-                                    onChange={(e) => setPrimaryColor(e.target.value)}
-                                    className="w-10 h-10 p-0 border-none rounded-md cursor-pointer"
-                                />
-                                <span className="font-mono text-sm">{primaryColor}</span>
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div>
+                                <Label htmlFor="primary-color">{t('primaryColor')}</Label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        id="primary-color"
+                                        value={primaryColor}
+                                        onChange={(e) => setPrimaryColor(e.target.value)}
+                                        className="w-10 h-10 p-0 border-none rounded-md cursor-pointer"
+                                    />
+                                    <span className="font-mono text-sm">{primaryColor}</span>
+                                </div>
+                            </div>
+                             <div>
+                                <Label htmlFor="active-sub-page-color">{t('activeSubPageColor')}</Label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        id="active-sub-page-color"
+                                        value={activeSubPageColor}
+                                        onChange={(e) => setActiveSubPageColor(e.target.value)}
+                                        className="w-10 h-10 p-0 border-none rounded-md cursor-pointer"
+                                    />
+                                    <span className="font-mono text-sm">{activeSubPageColor}</span>
+                                </div>
                             </div>
                         </div>
-                         <div className="space-y-2">
+                        <div className="space-y-2 pt-4 border-t dark:border-gray-700">
                             <Label htmlFor="logo-upload">{t('siteLogo')}</Label>
                             <div className="flex items-center gap-2 p-2 rounded-md border dark:border-gray-700 min-h-[56px]">
                                 {siteLogo ? (
@@ -146,8 +165,10 @@ export const ProfilePage = () => {
                                     </div>
                                 )}
                                 <span className="text-xl font-bold text-primary">Deal CRM</span>
+                            {/* FIX: Corrected typo in closing div tag. */}
                             </div>
-                            <div className="flex items-center gap-2">
+                        </div>
+                        <div className="flex items-center gap-2">
                                 <input
                                     ref={logoInputRef}
                                     id="logo-upload"
@@ -165,7 +186,6 @@ export const ProfilePage = () => {
                                     </Button>
                                 )}
                             </div>
-                        </div>
                     </div>
                 </Card>
 

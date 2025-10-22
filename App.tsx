@@ -1,8 +1,7 @@
 
-
 import React from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
-import { Sidebar, Header, PageWrapper, AddLeadModal, AddActionModal, AssignLeadModal, FilterDrawer, AddDeveloperModal, AddProjectModal, AddUnitModal, UnitsFilterDrawer, AddOwnerModal, DealsFilterDrawer, EditUserModal, DeleteUserModal, AddCampaignModal, AddIntegrationAccountModal, ChangePasswordModal } from './components/index';
+import { Sidebar, Header, PageWrapper, AddLeadModal, AddActionModal, AssignLeadModal, FilterDrawer, AddDeveloperModal, AddProjectModal, AddUnitModal, UnitsFilterDrawer, AddOwnerModal, EditOwnerModal, DealsFilterDrawer, EditUserModal, DeleteUserModal, AddCampaignModal, ManageIntegrationAccountModal, ChangePasswordModal, EditDeveloperModal, EditProjectModal } from './components/index';
 import { ActivitiesPage, CampaignsPage, CreateDealPage, DashboardPage, DealsPage, EmployeesReportPage, IntegrationsPage, LeadsPage, LoginPage, MarketingReportPage, OwnersPage, ProfilePage, PropertiesPage, SettingsPage, TeamsReportPage, TodosPage, UsersPage, ViewLeadPage } from './pages';
 
 const CurrentPageContent = () => {
@@ -55,6 +54,7 @@ const CurrentPageContent = () => {
             return <ProfilePage />;
         // ... add other pages here
         default:
+            // FIX: The PageWrapper component requires children.
             return <PageWrapper title={currentPage}><div>Content for {currentPage}</div></PageWrapper>;
     }
 }
@@ -94,10 +94,13 @@ const TheApp = () => {
                 <AddProjectModal />
                 <AddUnitModal />
                 <AddOwnerModal />
+                <EditOwnerModal />
+                <EditDeveloperModal />
+                <EditProjectModal />
                 <EditUserModal />
                 <DeleteUserModal />
                 <AddCampaignModal />
-                <AddIntegrationAccountModal />
+                <ManageIntegrationAccountModal />
                 <ChangePasswordModal />
             </div>
         </div>
@@ -107,6 +110,7 @@ const TheApp = () => {
 
 function App() {
   return (
+    // FIX: The AppProvider component requires children.
     <AppProvider>
         <TheApp />
     </AppProvider>

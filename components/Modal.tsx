@@ -1,7 +1,9 @@
 
+
 import React, { ReactNode } from 'react';
 
-type ModalProps = { isOpen: boolean, onClose: () => void, title: string, children: ReactNode };
+// FIX: Made children optional to fix missing children prop error.
+type ModalProps = { isOpen: boolean, onClose: () => void, title: string, children?: ReactNode };
 export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
   if (!isOpen) return null;
   return (

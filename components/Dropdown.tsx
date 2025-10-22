@@ -1,9 +1,11 @@
 
+
 import React, { useState, useRef, useEffect, ReactNode } from 'react';
 
+// FIX: Made children optional to fix missing children prop error.
 type DropdownProps = {
     trigger: ReactNode;
-    children: ReactNode;
+    children?: ReactNode;
 };
 
 export const Dropdown = ({ trigger, children }: DropdownProps) => {
@@ -41,8 +43,9 @@ export const Dropdown = ({ trigger, children }: DropdownProps) => {
     );
 };
 
+// FIX: Made children optional to fix missing children prop error.
 type DropdownItemProps = {
-    children: ReactNode;
+    children?: ReactNode;
     onClick: () => void;
 };
 

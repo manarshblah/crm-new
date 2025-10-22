@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
 import { Button } from '../Button';
+import { Project } from '../../types';
 
 // FIX: Made children optional to fix missing children prop error.
 const Label = ({ children, htmlFor }: { children?: React.ReactNode; htmlFor: string }) => (
@@ -17,15 +18,33 @@ const Select = ({ id, children, value, onChange }: { id: string; children?: Reac
     </select>
 );
 
-export const AddProjectModal = () => {
-    const { isAddProjectModalOpen, setIsAddProjectModalOpen, t, addProject, developers } = useAppContext();
-    const [formState, setFormState] = useState({
+
+export const EditProjectModal = () => {
+    const { isEditProjectModalOpen, setIsEditProjectModalOpen, t, updateProject, editingProject, setEditingProject, developers } = useAppContext();
+    const [formState, setFormState] = useState<Omit<Project, 'id' | 'code'>>({
         name: '',
-        developer: developers[0]?.name || '',
-        type: 'Residential',
+        developer: '',
+        type: '',
         city: '',
-        paymentMethod: 'Cash',
+        paymentMethod: '',
     });
+
+    useEffect(() => {
+        if (editingProject) {
+            setFormState({
+                name: editingProject.name,
+                developer: editingProject.developer,
+                type: editingProject.type,
+                city: editingProject.city,
+                paymentMethod: editingProject.paymentMethod,
+            });
+        }
+    }, [editingProject]);
+
+    const handleClose = () => {
+        setIsEditProjectModalOpen(false);
+        setEditingProject(null);
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
@@ -34,14 +53,19 @@ export const AddProjectModal = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        addProject(formState);
-        setIsAddProjectModalOpen(false);
-        // Reset form
-        setFormState({ name: '', developer: developers[0]?.name || '', type: 'Residential', city: '', paymentMethod: 'Cash' });
+        if (editingProject) {
+            updateProject({
+                ...editingProject,
+                ...formState,
+            });
+        }
+        handleClose();
     };
 
+    if (!editingProject) return null;
+
     return (
-        <Modal isOpen={isAddProjectModalOpen} onClose={() => setIsAddProjectModalOpen(false)} title={t('addNewProject')}>
+        <Modal isOpen={isEditProjectModalOpen} onClose={handleClose} title={`${t('edit')} ${t('project')}`}>
             <form onSubmit={handleSubmit} className="space-y-4">
                  <div>
                     <Label htmlFor="name">{t('projectName')}</Label>
@@ -68,8 +92,9 @@ export const AddProjectModal = () => {
                         <option value="Installments">{t('installment')}</option>
                     </Select>
                 </div>
-                <div className="flex justify-end">
-                    <Button type="submit">{t('submit')}</Button>
+                <div className="flex justify-end gap-2">
+                    <Button type="button" variant="secondary" onClick={handleClose}>{t('cancel')}</Button>
+                    <Button type="submit">{t('saveChanges')}</Button>
                 </div>
             </form>
         </Modal>

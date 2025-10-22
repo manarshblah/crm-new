@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { Theme, Language, Page, Lead, User } from '../types';
-import { translations, MOCK_USERS } from '../constants';
+import { Theme, Language, Page, Lead, User, Deal, Campaign, Developer, Project, Unit, Owner } from '../types';
+import { translations, MOCK_USERS, MOCK_CONNECTED_ACCOUNTS, MOCK_LEADS, MOCK_DEALS, MOCK_CAMPAIGNS, MOCK_DEVELOPERS, MOCK_PROJECTS, MOCK_UNITS, MOCK_OWNERS } from '../constants';
 
 // --- Helper Functions ---
 const hexToHsl = (hex: string): [number, number, number] | null => {
@@ -32,6 +32,8 @@ const hexToHsl = (hex: string): [number, number, number] | null => {
 
     return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
 };
+
+type ConnectedAccount = { id: number; name: string; status: string; link?: string; phone?: string; };
 
 // --- CONTEXT ---
 export interface AppContextType {
@@ -64,6 +66,8 @@ export interface AppContextType {
   setCheckedLeadIds: React.Dispatch<React.SetStateAction<Set<number>>>;
   primaryColor: string;
   setPrimaryColor: (color: string) => void;
+  activeSubPageColor: string;
+  setActiveSubPageColor: (color: string) => void;
   siteLogo: string | null;
   setSiteLogo: (logo: string | null) => void;
 
@@ -78,6 +82,19 @@ export interface AppContextType {
   setIsAddUnitModalOpen: (isOpen: boolean) => void;
   isAddOwnerModalOpen: boolean;
   setIsAddOwnerModalOpen: (isOpen: boolean) => void;
+  isEditOwnerModalOpen: boolean;
+  setIsEditOwnerModalOpen: (isOpen: boolean) => void;
+  editingOwner: Owner | null;
+  setEditingOwner: React.Dispatch<React.SetStateAction<Owner | null>>;
+  isEditDeveloperModalOpen: boolean;
+  setIsEditDeveloperModalOpen: (isOpen: boolean) => void;
+  editingDeveloper: Developer | null;
+  setEditingDeveloper: React.Dispatch<React.SetStateAction<Developer | null>>;
+  isEditProjectModalOpen: boolean;
+  setIsEditProjectModalOpen: (isOpen: boolean) => void;
+  editingProject: Project | null;
+  setEditingProject: React.Dispatch<React.SetStateAction<Project | null>>;
+
 
   // Deals states
   isDealsFilterDrawerOpen: boolean;
@@ -94,12 +111,40 @@ export interface AppContextType {
   setIsAddCampaignModalOpen: (isOpen: boolean) => void;
 
   // Integrations states
-  isAddIntegrationAccountModalOpen: boolean;
-  setIsAddIntegrationAccountModalOpen: (isOpen: boolean) => void;
+  isManageIntegrationAccountModalOpen: boolean;
+  setIsManageIntegrationAccountModalOpen: (isOpen: boolean) => void;
+  connectedAccounts: typeof MOCK_CONNECTED_ACCOUNTS;
+  setConnectedAccounts: React.Dispatch<React.SetStateAction<typeof MOCK_CONNECTED_ACCOUNTS>>;
+  editingAccount: ConnectedAccount | null;
+  setEditingAccount: React.Dispatch<React.SetStateAction<ConnectedAccount | null>>;
   
   // Change Password Modal state
   isChangePasswordModalOpen: boolean;
   setIsChangePasswordModalOpen: (isOpen: boolean) => void;
+
+  // Data states
+  leads: Lead[];
+  addLead: (lead: Omit<Lead, 'id' | 'createdAt' | 'history' | 'lastFeedback' | 'notes' | 'lastStage' | 'reminder'>) => void;
+  deals: Deal[];
+  addDeal: (deal: Omit<Deal, 'id'>) => void;
+  deleteDeal: (dealId: number) => void;
+  campaigns: Campaign[];
+  addCampaign: (campaign: Omit<Campaign, 'id'>) => void;
+  deleteCampaign: (campaignId: number) => void;
+  developers: Developer[];
+  addDeveloper: (developer: Omit<Developer, 'id' | 'code'>) => void;
+  updateDeveloper: (developer: Developer) => void;
+  deleteDeveloper: (developerId: number) => void;
+  projects: Project[];
+  addProject: (project: Omit<Project, 'id' | 'code'>) => void;
+  updateProject: (project: Project) => void;
+  deleteProject: (projectId: number) => void;
+  units: Unit[];
+  addUnit: (unit: Omit<Unit, 'id' | 'code' | 'isSold'>) => void;
+  owners: Owner[];
+  addOwner: (owner: Omit<Owner, 'id' | 'code'>) => void;
+  updateOwner: (owner: Owner) => void;
+  deleteOwner: (ownerId: number) => void;
 }
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -110,7 +155,8 @@ export const useAppContext = () => {
   return context;
 };
 
-type AppProviderProps = { children: ReactNode };
+// FIX: Made children optional to fix missing children prop error.
+type AppProviderProps = { children?: ReactNode };
 export const AppProvider = ({ children }: AppProviderProps) => {
   const [theme, setThemeState] = useState<Theme>('light');
   const [language, setLanguage] = useState<Language>('en');
@@ -121,7 +167,17 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(MOCK_USERS[0]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [primaryColor, setPrimaryColor] = useState('#3b82f6'); // Default blue
+  const [activeSubPageColor, setActiveSubPageColorState] = useState('#f97316'); // Default orange
   const [siteLogo, setSiteLogo] = useState<string | null>(null);
+  
+  // Data states
+  const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
+  const [deals, setDeals] = useState<Deal[]>(MOCK_DEALS);
+  const [campaigns, setCampaigns] = useState<Campaign[]>(MOCK_CAMPAIGNS);
+  const [developers, setDevelopers] = useState<Developer[]>(MOCK_DEVELOPERS);
+  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
+  const [units, setUnits] = useState<Unit[]>(MOCK_UNITS);
+  const [owners, setOwners] = useState<Owner[]>(MOCK_OWNERS);
   
   // Modals and drawers state
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
@@ -136,6 +192,12 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [isAddUnitModalOpen, setIsAddUnitModalOpen] = useState(false);
   const [isAddOwnerModalOpen, setIsAddOwnerModalOpen] = useState(false);
+  const [isEditOwnerModalOpen, setIsEditOwnerModalOpen] = useState(false);
+  const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
+  const [isEditDeveloperModalOpen, setIsEditDeveloperModalOpen] = useState(false);
+  const [editingDeveloper, setEditingDeveloper] = useState<Developer | null>(null);
+  const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   
   // Deals state
   const [isDealsFilterDrawerOpen, setIsDealsFilterDrawerOpen] = useState(false);
@@ -148,7 +210,9 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [isAddCampaignModalOpen, setIsAddCampaignModalOpen] = useState(false);
 
   // Integrations state
-  const [isAddIntegrationAccountModalOpen, setIsAddIntegrationAccountModalOpen] = useState(false);
+  const [isManageIntegrationAccountModalOpen, setIsManageIntegrationAccountModalOpen] = useState(false);
+  const [connectedAccounts, setConnectedAccounts] = useState(MOCK_CONNECTED_ACCOUNTS);
+  const [editingAccount, setEditingAccount] = useState<ConnectedAccount | null>(null);
   
   // Change Password Modal state
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
@@ -161,6 +225,8 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     if (storedLang) setLanguage(storedLang);
     const storedColor = localStorage.getItem('primaryColor');
     if (storedColor) setPrimaryColor(storedColor);
+    const storedSubPageColor = localStorage.getItem('activeSubPageColor');
+    if (storedSubPageColor) setActiveSubPageColorState(storedSubPageColor);
     const storedLogo = localStorage.getItem('siteLogo');
     if (storedLogo) setSiteLogo(storedLogo);
 
@@ -191,6 +257,11 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     localStorage.setItem('primaryColor', color);
   };
 
+  const setAppSubPageColor = (color: string) => {
+    setActiveSubPageColorState(color);
+    localStorage.setItem('activeSubPageColor', color);
+  };
+
   useEffect(() => {
     const hsl = hexToHsl(primaryColor);
     if(hsl) {
@@ -212,6 +283,15 @@ export const AppProvider = ({ children }: AppProviderProps) => {
         root.style.setProperty('--primary-foreground', foregroundColor);
     }
   }, [primaryColor]);
+  
+  useEffect(() => {
+    const hsl = hexToHsl(activeSubPageColor);
+    if(hsl) {
+        const [h, s, l] = hsl;
+        const root = document.documentElement;
+        root.style.setProperty('--primary-active-sub', `${h} ${s}% ${l}%`);
+    }
+  }, [activeSubPageColor]);
 
   useEffect(() => {
     setTheme(theme);
@@ -223,7 +303,103 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     return translations[language][key] || translations.en[key];
   };
 
-  const value = { 
+  // --- CRUD Functions ---
+  const addLead = (leadData: Omit<Lead, 'id' | 'createdAt' | 'history' | 'lastFeedback' | 'notes' | 'lastStage' | 'reminder'>) => {
+    const newLead: Lead = {
+      ...leadData,
+      id: Date.now(),
+      createdAt: new Date().toISOString().split('T')[0],
+      history: [],
+      lastFeedback: 'Lead Created',
+      notes: '',
+      lastStage: 'Untouched',
+      reminder: '',
+      status: 'Untouched',
+    };
+    setLeads(prev => [newLead, ...prev]);
+  };
+
+  const addDeal = (dealData: Omit<Deal, 'id'>) => {
+    const newDeal: Deal = { ...dealData, id: Date.now() };
+    setDeals(prev => [newDeal, ...prev]);
+  };
+  const deleteDeal = (dealId: number) => setDeals(prev => prev.filter(d => d.id !== dealId));
+
+  const addCampaign = (campaignData: Omit<Campaign, 'id'>) => {
+    const newCampaign: Campaign = { ...campaignData, id: Date.now() };
+    setCampaigns(prev => [newCampaign, ...prev]);
+  };
+  const deleteCampaign = (campaignId: number) => setCampaigns(prev => prev.filter(c => c.id !== campaignId));
+  
+  const addDeveloper = (developerData: Omit<Developer, 'id' | 'code'>) => {
+    const lastCodeNum = developers.reduce((max, d) => {
+        const numStr = d.code.replace('DEV', '');
+        const num = parseInt(numStr, 10);
+        return !isNaN(num) && num > max ? num : max;
+    }, 0);
+    const newDeveloper: Developer = {
+      ...developerData,
+      id: Date.now(),
+      code: `DEV${(lastCodeNum + 1).toString().padStart(3, '0')}`
+    };
+    setDevelopers(prev => [newDeveloper, ...prev]);
+  };
+  const updateDeveloper = (updatedDeveloper: Developer) => {
+    setDevelopers(prev => prev.map(d => d.id === updatedDeveloper.id ? updatedDeveloper : d));
+  };
+  const deleteDeveloper = (developerId: number) => setDevelopers(prev => prev.filter(d => d.id !== developerId));
+
+
+  const addProject = (projectData: Omit<Project, 'id' | 'code'>) => {
+      const lastCodeNum = projects.reduce((max, p) => {
+          const num = parseInt(p.code.replace('PROJ', ''));
+          return num > max ? num : max;
+      }, 0);
+      const newProject: Project = { 
+          ...projectData, 
+          id: Date.now(),
+          code: `PROJ${(lastCodeNum + 1).toString().padStart(3, '0')}`
+      };
+      setProjects(prev => [newProject, ...prev]);
+  };
+  const updateProject = (updatedProject: Project) => {
+    setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+  };
+  const deleteProject = (projectId: number) => setProjects(prev => prev.filter(p => p.id !== projectId));
+  
+  const addUnit = (unitData: Omit<Unit, 'id' | 'code' | 'isSold'>) => {
+       const lastCodeNum = units.reduce((max, u) => {
+          const num = parseInt(u.code.replace('UNIT', ''));
+          return num > max ? num : max;
+      }, 0);
+      const newUnit: Unit = { 
+          ...unitData, 
+          id: Date.now(),
+          code: `UNIT${(lastCodeNum + 1).toString().padStart(3, '0')}`,
+          isSold: false
+      };
+      setUnits(prev => [newUnit, ...prev]);
+  };
+
+  const addOwner = (ownerData: Omit<Owner, 'id' | 'code'>) => {
+    const lastCodeNum = owners.reduce((max, o) => {
+        const num = parseInt(o.code.replace('OWN', ''));
+        return num > max ? num : max;
+    }, 0);
+    const newOwner: Owner = {
+      ...ownerData,
+      id: Date.now(),
+      code: `OWN${(lastCodeNum + 1).toString().padStart(3, '0')}`
+    };
+    setOwners(prev => [newOwner, ...prev]);
+  };
+  const updateOwner = (updatedOwner: Owner) => {
+    setOwners(prev => prev.map(o => o.id === updatedOwner.id ? updatedOwner : o));
+  };
+  const deleteOwner = (ownerId: number) => setOwners(prev => prev.filter(o => o.id !== ownerId));
+
+
+  const value: AppContextType = { 
     theme, setTheme, 
     language, setLanguage: setLang, 
     isLoggedIn, setIsLoggedIn, 
@@ -239,18 +415,35 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     isFilterDrawerOpen, setIsFilterDrawerOpen,
     checkedLeadIds, setCheckedLeadIds,
     primaryColor, setPrimaryColor: setAppColor,
+    activeSubPageColor, setActiveSubPageColor: setAppSubPageColor,
     siteLogo, setSiteLogo,
     isUnitsFilterDrawerOpen, setIsUnitsFilterDrawerOpen,
     isAddDeveloperModalOpen, setIsAddDeveloperModalOpen,
     isAddProjectModalOpen, setIsAddProjectModalOpen,
     isAddUnitModalOpen, setIsAddUnitModalOpen,
     isAddOwnerModalOpen, setIsAddOwnerModalOpen,
+    isEditOwnerModalOpen, setIsEditOwnerModalOpen,
+    editingOwner, setEditingOwner,
+    isEditDeveloperModalOpen, setIsEditDeveloperModalOpen,
+    editingDeveloper, setEditingDeveloper,
+    isEditProjectModalOpen, setIsEditProjectModalOpen,
+    editingProject, setEditingProject,
     isDealsFilterDrawerOpen, setIsDealsFilterDrawerOpen,
     isEditUserModalOpen, setIsEditUserModalOpen,
     isDeleteUserModalOpen, setIsDeleteUserModalOpen,
     isAddCampaignModalOpen, setIsAddCampaignModalOpen,
-    isAddIntegrationAccountModalOpen, setIsAddIntegrationAccountModalOpen,
+    isManageIntegrationAccountModalOpen, setIsManageIntegrationAccountModalOpen,
+    connectedAccounts, setConnectedAccounts,
+    editingAccount, setEditingAccount,
     isChangePasswordModalOpen, setIsChangePasswordModalOpen,
+    // Data and functions
+    leads, addLead,
+    deals, addDeal, deleteDeal,
+    campaigns, addCampaign, deleteCampaign,
+    developers, addDeveloper, updateDeveloper, deleteDeveloper,
+    projects, addProject, updateProject, deleteProject,
+    units, addUnit,
+    owners, addOwner, updateOwner, deleteOwner,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

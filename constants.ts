@@ -43,6 +43,7 @@ export const MOCK_LEADS: Lead[] = [
 export const MOCK_DEALS: Deal[] = [
     { id: 1, clientName: 'Ahmed Amiri', unit: 'Villa #12', paymentMethod: 'Cash', status: 'Reservation', value: 500000, project: 'Downtown Dubai', startDate: '2024-10-20', closedDate: '2024-11-20', startedBy: 2, closedBy: 3 },
     { id: 2, clientName: 'Test 2', unit: 'Apt 301', paymentMethod: 'Installment', status: 'Contracted', value: 750000, project: 'Palm Jumeirah', startDate: '2024-09-15', closedDate: '2024-12-15', startedBy: 2, closedBy: 2 },
+    // FIX: Changed 'name' to 'clientName' to conform to the Deal interface.
     { id: 3, clientName: 'New Client', unit: 'Penthouse A', paymentMethod: 'Cash', status: 'Closed', value: 1200000, project: 'Downtown Dubai', startDate: '2024-10-01', closedDate: '2024-10-10', startedBy: 3, closedBy: 3 },
 ];
 
@@ -135,8 +136,8 @@ export const MOCK_EMPLOYEE_REPORT_DATA = [
 
 export const MOCK_CONNECTED_ACCOUNTS = {
     facebook: [
-        { id: 1, name: 'My Real Estate Page', status: 'Connected' },
-        { id: 2, name: 'Luxury Villas Dubai', status: 'Connected' },
+        { id: 1, name: 'My Real Estate Page', status: 'Connected', link: 'https://facebook.com/realestate' },
+        { id: 2, name: 'Luxury Villas Dubai', status: 'Connected', link: 'https://facebook.com/villasdubai' },
     ],
     tiktok: [],
     whatsapp: [],
@@ -146,7 +147,8 @@ export const MOCK_CONNECTED_ACCOUNTS = {
 export const MOCK_CHANNELS: Channel[] = [
     { id: 1, name: 'Website', type: 'Web', priority: 'High' },
     { id: 2, name: 'Facebook', type: 'Social', priority: 'Medium' },
-    { id: 3, name: 'Google Ads', type: 'Web', priority: 'High' },
+    { id: 3, name: 'Google Ads', type: 'advertising', priority: 'High' },
+    { id: 4, name: 'Newsletter', type: 'email', priority: 'Medium' },
 ];
 
 export const MOCK_STAGES: Stage[] = [
@@ -156,10 +158,10 @@ export const MOCK_STAGES: Stage[] = [
 ];
 
 export const MOCK_STATUSES: Status[] = [
-    { id: 1, name: 'Active', description: 'Lead is currently active.', category: 'In Progress', color: '#22c55e', isDefault: true },
-    { id: 2, name: 'Follow Up', description: 'Requires a follow-up call.', category: 'In Progress', color: '#3b82f6' },
-    { id: 3, name: 'No Answer', description: 'Could not reach the lead.', category: 'On Hold', color: '#f59e0b' },
-    { id: 4, name: 'Not Interested', description: 'Lead is not interested.', category: 'Completed', color: '#ef4444', isHidden: true },
+    { id: 1, name: 'Active', description: 'Lead is currently active.', category: 'Active', color: '#22c55e', isDefault: true },
+    { id: 2, name: 'Follow Up', description: 'Requires a follow-up call.', category: 'Follow Up', color: '#3b82f6' },
+    { id: 3, name: 'No Answer', description: 'Could not reach the lead.', category: 'Inactive', color: '#f59e0b' },
+    { id: 4, name: 'Not Interested', description: 'Lead is not interested.', category: 'Closed', color: '#ef4444', isHidden: true },
 ];
 
 
@@ -356,6 +358,9 @@ export const translations = {
         activeChannels: "Active Channels",
         addChannel: "Add Channel",
         channel: "Channel",
+        addType: "Add Type",
+        typeName: "Type Name",
+        enterTypeName: "Enter type name",
         stageAutomation: "Stage Automation",
         autoStageAdvancement: "Enable Auto Stage Advancement",
         requireStageCompletion: "Require Stage Completion",
@@ -372,11 +377,16 @@ export const translations = {
         availableStatuses: "Available Statuses",
         addStatus: "Add Status",
         category: "Category",
+        inactive: "Inactive",
+        followUp: "Follow Up",
+        closed: "Closed",
         // Modals & Drawers general
         submit: "Submit",
         cancel: "Cancel",
         reset: "Reset",
         applyFilters: "Apply Filters",
+        edit: "Edit",
+        confirmDelete: "Are you sure you want to delete this item? This action cannot be undone.",
         // AddLeadModal
         addNewLead: "Add New Lead",
         clientName: "Client Name",
@@ -497,7 +507,7 @@ export const translations = {
         selectStatus: "Select status",
         reservation: "Reservation",
         contracted: "Contracted",
-        closed: "Closed",
+        // closed: "Closed", // This key already exists
         selectMethod: "Select method",
         cash: "Cash",
         installment: "Installment",
@@ -549,6 +559,7 @@ export const translations = {
         profileSettings: "Profile Settings",
         siteCustomization: "Site Customization",
         primaryColor: "Primary Color",
+        activeSubPageColor: "Active Sub-Page Color",
         siteLogo: "Site Logo",
         profilePicture: "Profile Picture",
         upload: "Upload",
@@ -747,6 +758,9 @@ export const translations = {
         activeChannels: "القنوات النشطة",
         addChannel: "إضافة قناة",
         channel: "القناة",
+        addType: "إضافة نوع",
+        typeName: "اسم النوع",
+        enterTypeName: "أدخل اسم النوع",
         stageAutomation: "أتمتة المراحل",
         autoStageAdvancement: "تمكين التقدم التلقائي للمرحلة",
         requireStageCompletion: "طلب إكمال المرحلة",
@@ -763,11 +777,16 @@ export const translations = {
         availableStatuses: "الحالات المتاحة",
         addStatus: "إضافة حالة",
         category: "الفئة",
+        inactive: "غير نشط",
+        followUp: "متابعة",
+        closed: "مغلق",
         // Modals & Drawers general
         submit: "إرسال",
         cancel: "إلغاء",
         reset: "إعادة تعيين",
         applyFilters: "تطبيق الفلاتر",
+        edit: "تعديل",
+        confirmDelete: "هل أنت متأكد أنك تريد حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء.",
         // AddLeadModal
         addNewLead: "إضافة عميل جديد",
         clientName: "اسم العميل",
@@ -888,7 +907,7 @@ export const translations = {
         selectStatus: "اختر الحالة",
         reservation: "حجز",
         contracted: "تم التعاقد",
-        closed: "مغلق",
+        // closed: "مغلق", // This key already exists
         selectMethod: "اختر الطريقة",
         cash: "نقدي",
         installment: "تقسيط",
@@ -917,7 +936,7 @@ export const translations = {
         enterCampaignBudget: "أدخل ميزانية الحملة",
         active: "نشط",
         // AddIntegrationAccountModal
-        addNew: "إضافة جديد",
+        addNew: "Add New",
         account: "حساب",
         accountName: "اسم الحساب",
         enterAccountName: "أدخل اسم الحساب",
@@ -940,6 +959,7 @@ export const translations = {
         profileSettings: "إعدادات الملف الشخصي",
         siteCustomization: "تخصيص الموقع",
         primaryColor: "اللون الأساسي",
+        activeSubPageColor: "لون الصفحة الفرعية النشط",
         siteLogo: "شعار الموقع",
         profilePicture: "صورة الملف الشخصي",
         upload: "رفع",

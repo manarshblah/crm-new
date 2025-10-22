@@ -1,7 +1,9 @@
 
+
 import React, { ReactNode } from 'react';
 
-type PageWrapperProps = { title: string, children: ReactNode, actions?: ReactNode };
+// FIX: Made children optional to fix missing children prop error.
+type PageWrapperProps = { title: string, children?: ReactNode, actions?: ReactNode };
 export const PageWrapper = ({ title, children, actions }: PageWrapperProps) => (
     <div className="p-4 sm:p-6 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">

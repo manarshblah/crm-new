@@ -130,19 +130,22 @@ export const TodosPage = () => {
                             filteredTodos.map(todo => {
                                 const Icon = TODO_ICONS[todo.type];
                                 return (
-                                    <Card key={todo.id} className="flex items-center gap-4 p-4">
-                                        <div className="p-2 bg-primary-100 dark:bg-primary-900 rounded-full">
-                                            <Icon className="w-5 h-5 text-primary" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="font-semibold">{todo.type}</p>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">{todo.leadName} - {todo.leadPhone}</p>
-                                            <p className="text-xs text-gray-500">{new Date(todo.dueDate).toLocaleDateString()}</p>
-                                        </div>
-                                        <Button variant="ghost" className="p-2 h-auto text-green-500 hover:bg-green-100 dark:hover:bg-green-900" onClick={() => handleCompleteTodo(todo.id)}>
-                                            <CheckIcon className="w-6 h-6" />
-                                        </Button>
-                                    </Card>
+                                    // FIX: Wrapped Card in a div with a key to resolve TypeScript error about key prop not being in CardProps.
+                                    <div key={todo.id}>
+                                        <Card className="flex items-center gap-4 p-4">
+                                            <div className="p-2 bg-primary-100 dark:bg-primary-900 rounded-full">
+                                                <Icon className="w-5 h-5 text-primary" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-semibold">{todo.type}</p>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400">{todo.leadName} - {todo.leadPhone}</p>
+                                                <p className="text-xs text-gray-500">{new Date(todo.dueDate).toLocaleDateString()}</p>
+                                            </div>
+                                            <Button variant="ghost" className="p-2 h-auto text-green-500 hover:bg-green-100 dark:hover:bg-green-900" onClick={() => handleCompleteTodo(todo.id)}>
+                                                <CheckIcon className="w-6 h-6" />
+                                            </Button>
+                                        </Card>
+                                    </div>
                                 );
                             })
                         ) : (
