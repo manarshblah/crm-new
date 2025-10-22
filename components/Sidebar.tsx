@@ -64,11 +64,10 @@ export const Sidebar = () => {
                             lg:translate-x-0 
                             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full'}`}>
             <div className="flex items-center justify-between p-4 border-b dark:border-gray-800 h-16">
-                {siteLogo ? (
-                    <img src={siteLogo} alt="Site Logo" className="h-8 max-w-full" />
-                ) : (
+                <div className="flex items-center gap-2">
+                    {siteLogo && <img src={siteLogo} alt="Site Logo" className="h-10 object-contain" />}
                     <h1 className="text-xl font-bold text-primary">Deal CRM</h1>
-                )}
+                </div>
                 <Button variant="ghost" className="lg:hidden p-1 -mr-2 rtl:-mr-0 rtl:-ml-2" onClick={() => setIsSidebarOpen(false)}>
                     <XIcon className="h-6 w-6" />
                 </Button>

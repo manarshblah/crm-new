@@ -1,4 +1,5 @@
 
+
 import React, { useRef } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { PageWrapper, Card, Input, Button } from '../components/index';
@@ -7,13 +8,13 @@ const Label = ({ children, htmlFor }: { children: React.ReactNode; htmlFor: stri
     <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{children}</label>
 );
 
-const FileInput = ({ id, label, onChange }: { id: string; label: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => {
+const FileInput = ({ id, label, onChange }: { id: string; label?: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const { t } = useAppContext();
 
     return (
         <div>
-            <Label htmlFor={id}>{label}</Label>
+            {label && <Label htmlFor={id}>{label}</Label>}
             <div className="flex items-center gap-2">
                 <input
                     ref={inputRef}
@@ -43,6 +44,8 @@ export const ProfilePage = () => {
         setIsChangePasswordModalOpen
     } = useAppContext();
 
+    const logoInputRef = useRef<HTMLInputElement>(null);
+
     if (!currentUser) return null;
 
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,6 +69,14 @@ export const ProfilePage = () => {
                 localStorage.setItem('siteLogo', logoDataUrl);
             };
             reader.readAsDataURL(e.target.files[0]);
+        }
+    };
+
+    const handleDeleteLogo = () => {
+        setSiteLogo(null);
+        localStorage.removeItem('siteLogo');
+        if (logoInputRef.current) {
+            logoInputRef.current.value = "";
         }
     };
 
@@ -94,7 +105,7 @@ export const ProfilePage = () => {
 
                 <Card>
                     <h2 className="text-xl font-semibold mb-4 border-b pb-2 dark:border-gray-700">{t('siteCustomization')}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         <div>
                             <Label htmlFor="primary-color">{t('primaryColor')}</Label>
                             <div className="flex items-center gap-2">
@@ -108,9 +119,36 @@ export const ProfilePage = () => {
                                 <span className="font-mono text-sm">{primaryColor}</span>
                             </div>
                         </div>
-                         <div className="flex flex-col gap-4">
-                            {siteLogo && <img src={siteLogo} alt="Current Logo" className="h-10 max-w-[200px] object-contain self-start" />}
-                            <FileInput id="logo-upload" label={t('siteLogo')} onChange={handleLogoChange} />
+                         <div className="space-y-2">
+                            <Label htmlFor="logo-upload">{t('siteLogo')}</Label>
+                            <div className="flex items-center gap-2 p-2 rounded-md border dark:border-gray-700 min-h-[56px]">
+                                {siteLogo ? (
+                                    <img src={siteLogo} alt="Current Logo" className="h-10 object-contain" />
+                                ) : (
+                                    <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center text-gray-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                                    </div>
+                                )}
+                                <span className="text-xl font-bold text-primary">Deal CRM</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    ref={logoInputRef}
+                                    id="logo-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleLogoChange}
+                                    className="hidden"
+                                />
+                                <Button variant="secondary" onClick={() => logoInputRef.current?.click()}>
+                                    {t('upload')}
+                                </Button>
+                                {siteLogo && (
+                                    <Button variant="danger" onClick={handleDeleteLogo}>
+                                        {t('delete')}
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </Card>
