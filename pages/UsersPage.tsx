@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { MOCK_USERS } from '../constants';
 import { PageWrapper, Button, Card, Dropdown, DropdownItem, WhatsappIcon, Loader } from '../components/index';
 import { User } from '../types';
 
@@ -23,7 +22,7 @@ const UserCard = ({ user }: { user: User }) => {
             <div className="absolute top-2 end-2">
                 <Dropdown trigger={
                     <Button variant="ghost" className="p-1 h-auto">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                     </Button>
                 }>
                     <DropdownItem onClick={() => { /* Implement View User navigation */ }}>{t('viewUser')}</DropdownItem>
@@ -51,10 +50,10 @@ const UserCard = ({ user }: { user: User }) => {
 
 
 export const UsersPage = () => {
-    const { t } = useAppContext();
+    const { t, users } = useAppContext();
     const [autoAssign, setAutoAssign] = useState(true);
     const [loading, setLoading] = useState(true);
-    const userCount = MOCK_USERS.length;
+    const userCount = users.length;
 
     useEffect(() => {
         const timer = setTimeout(() => setLoading(false), 1000);
@@ -85,7 +84,7 @@ export const UsersPage = () => {
             }
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {MOCK_USERS.map(user => (
+                {users.map(user => (
                     // FIX: Wrapped UserCard in a div with a key to resolve TypeScript error about key prop not being in UserCard's props.
                     <div key={user.id}>
                         <UserCard user={user} />

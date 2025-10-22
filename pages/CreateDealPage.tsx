@@ -21,35 +21,36 @@ export const CreateDealPage = () => {
     const { t, setCurrentPage, setIsAddLeadModalOpen, addDeal, projects, units, leads, currentUser } = useAppContext();
     const [loading, setLoading] = useState(true);
     const [formState, setFormState] = useState({
-        clientName: leads[0]?.name || '',
-        unit: units[0]?.code || '',
-        paymentMethod: 'Cash',
-        status: 'Reservation',
-        value: '',
-        project: projects[0]?.name || '',
-        leadId: leads[0]?.id || undefined,
+        project: projects.length > 0 ? projects[0].name : '',
+        unit: units.length > 0 ? units[0].code : '',
+        leadId: leads.length > 0 ? leads[0].id : 0,
         startedBy: currentUser?.id || 1,
         closedBy: currentUser?.id || 1,
+        paymentMethod: 'Cash',
+        status: 'Reservation',
         startDate: new Date().toISOString().split('T')[0],
         closedDate: '',
+        value: '',
         discountPercentage: '',
         discountAmount: '',
         salesCommissionPercentage: '',
-        salesCommissionAmount: '',
         description: '',
     });
+
+    const calculatedValues = useMemo(() => {
+        const value = parseFloat(formState.value) || 0;
+        const discountAmount = parseFloat(formState.discountAmount) || 0;
+        const totalValue = value - discountAmount;
+        const commissionPercent = parseFloat(formState.salesCommissionPercentage) || 0;
+        const salesCommissionAmount = totalValue * (commissionPercent / 100);
+        return { totalValue, salesCommissionAmount };
+    }, [formState.value, formState.discountAmount, formState.salesCommissionPercentage]);
 
     useEffect(() => {
         const timer = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timer);
     }, []);
 
-    const totalValue = useMemo(() => {
-        const value = parseFloat(formState.value) || 0;
-        const discountAmount = parseFloat(formState.discountAmount) || 0;
-        return value - discountAmount;
-    }, [formState.value, formState.discountAmount]);
-    
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { id, value } = e.target;
         setFormState(prev => {
@@ -60,47 +61,30 @@ export const CreateDealPage = () => {
                 const discPercent = parseFloat(newState.discountPercentage) || 0;
                 newState.discountAmount = (val * (discPercent / 100)).toFixed(2);
             }
-            
-            if (id === 'salesCommissionPercentage') {
-                const commissionPercent = parseFloat(value) || 0;
-                const finalValue = parseFloat(newState.value) - (parseFloat(newState.discountAmount) || 0);
-                newState.salesCommissionAmount = (finalValue * (commissionPercent / 100)).toFixed(2);
-            }
 
             return newState;
         });
     };
-
-    const handleLeadChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const leadId = Number(e.target.value);
-        const selectedLead = leads.find(l => l.id === leadId);
-        if (selectedLead) {
-            setFormState(prev => ({
-                ...prev,
-                leadId: selectedLead.id,
-                clientName: selectedLead.name,
-            }));
-        }
-    };
     
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const clientName = leads.find(l => l.id === formState.leadId)?.name || 'Unknown Client';
         addDeal({
-            clientName: formState.clientName,
+            clientName,
             unit: formState.unit,
             paymentMethod: formState.paymentMethod,
             status: formState.status,
-            value: totalValue,
+            value: calculatedValues.totalValue,
             project: formState.project,
             leadId: formState.leadId,
             startedBy: Number(formState.startedBy),
             closedBy: Number(formState.closedBy),
             startDate: formState.startDate,
             closedDate: formState.closedDate,
-            discountPercentage: Number(formState.discountPercentage),
-            discountAmount: Number(formState.discountAmount),
-            salesCommissionPercentage: Number(formState.salesCommissionPercentage),
-            salesCommissionAmount: Number(formState.salesCommissionAmount),
+            discountPercentage: Number(formState.discountPercentage) || 0,
+            discountAmount: Number(formState.discountAmount) || 0,
+            salesCommissionPercentage: Number(formState.salesCommissionPercentage) || 0,
+            salesCommissionAmount: calculatedValues.salesCommissionAmount,
             description: formState.description,
         });
         setCurrentPage('Deals');
@@ -126,27 +110,27 @@ export const CreateDealPage = () => {
                         <div>
                             <Label htmlFor="project">{t('project')}</Label>
                             <Select id="project" value={formState.project} onChange={handleChange}>
-                                <option>{t('selectProject')}</option>
+                                <option disabled value="">{t('selectProject')}</option>
                                 {projects.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                             </Select>
                         </div>
                         <div>
                             <Label htmlFor="unit">{t('unit')}</Label>
                             <Select id="unit" value={formState.unit} onChange={handleChange}>
-                                <option>{t('selectUnit')}</option>
+                                <option disabled value="">{t('selectUnit')}</option>
                                 {units.map(u => <option key={u.id} value={u.code}>{u.code}</option>)}
                             </Select>
                         </div>
                         <div>
                             <Label htmlFor="leadId">{t('lead')}</Label>
                             <div className="flex gap-2">
-                            <Select id="leadId" className="flex-grow" value={formState.leadId} onChange={handleLeadChange}>
-                                <option>{t('selectUser')}</option>
-                                {leads.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                            </Select>
-                            <Button type="button" variant="secondary" className="px-3" onClick={() => setIsAddLeadModalOpen(true)}>
-                                <PlusIcon className="w-4 h-4"/>
-                            </Button>
+                                <Select id="leadId" className="flex-grow" value={formState.leadId} onChange={(e) => setFormState(p => ({...p, leadId: Number(e.target.value)}))}>
+                                    <option disabled value={0}>{t('selectUser')}</option>
+                                    {leads.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                </Select>
+                                <Button type="button" variant="secondary" className="px-3" onClick={() => setIsAddLeadModalOpen(true)}>
+                                    <PlusIcon className="w-4 h-4"/>
+                                </Button>
                             </div>
                         </div>
                         {/* Row 2 */}
@@ -186,7 +170,7 @@ export const CreateDealPage = () => {
                             <Label htmlFor="closedDate">{t('closedDate')}</Label>
                             <Input id="closedDate" type="date" value={formState.closedDate} onChange={handleChange}/>
                         </div>
-                        {/* Row 4 */}
+                         {/* Row 4 */}
                         <div>
                             <Label htmlFor="value">{t('value')}</Label>
                             <Input id="value" type="number" placeholder="e.g. 1000000" value={formState.value} onChange={handleChange}/>
@@ -197,12 +181,12 @@ export const CreateDealPage = () => {
                         </div>
                         <div>
                             <Label htmlFor="discountAmount">{t('discountAmount')}</Label>
-                            <Input id="discountAmount" type="number" placeholder="Calculated automatically" value={formState.discountAmount} onChange={handleChange} readOnly />
+                            <Input id="discountAmount" type="number" placeholder="Calculated" value={formState.discountAmount} readOnly />
                         </div>
                          {/* Row 5 */}
                          <div>
                             <Label htmlFor="totalValue">{t('totalValue')}</Label>
-                            <Input id="totalValue" type="number" value={totalValue} readOnly className="font-bold bg-gray-100 dark:bg-gray-800" />
+                            <Input id="totalValue" type="number" value={calculatedValues.totalValue} readOnly className="font-bold bg-gray-100 dark:bg-gray-800" />
                         </div>
                         <div>
                             <Label htmlFor="salesCommissionPercentage">{t('salesCommissionPercentage')}</Label>
@@ -210,7 +194,7 @@ export const CreateDealPage = () => {
                         </div>
                         <div>
                             <Label htmlFor="salesCommissionAmount">{t('salesCommissionAmount')}</Label>
-                            <Input id="salesCommissionAmount" type="number" placeholder="Calculated automatically" value={formState.salesCommissionAmount} onChange={handleChange} readOnly />
+                            <Input id="salesCommissionAmount" type="number" placeholder="Calculated" value={calculatedValues.salesCommissionAmount.toFixed(2)} readOnly />
                         </div>
                     </div>
                     <div className="mt-6">

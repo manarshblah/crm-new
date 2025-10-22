@@ -1,14 +1,16 @@
+
 import React from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
 
 export const DeleteUserModal = () => {
-    const { isDeleteUserModalOpen, setIsDeleteUserModalOpen, selectedUser, t } = useAppContext();
+    const { isDeleteUserModalOpen, setIsDeleteUserModalOpen, selectedUser, t, deleteUser } = useAppContext();
 
     const handleDelete = () => {
-        // Here you would typically call an API to delete the user
-        console.log(`Deleting user: ${selectedUser?.name}`);
+        if (selectedUser) {
+            deleteUser(selectedUser.id);
+        }
         setIsDeleteUserModalOpen(false);
     };
 

@@ -123,6 +123,8 @@ export interface AppContextType {
   setIsChangePasswordModalOpen: (isOpen: boolean) => void;
 
   // Data states
+  users: User[];
+  deleteUser: (userId: number) => void;
   leads: Lead[];
   addLead: (lead: Omit<Lead, 'id' | 'createdAt' | 'history' | 'lastFeedback' | 'notes' | 'lastStage' | 'reminder'>) => void;
   deals: Deal[];
@@ -171,6 +173,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [siteLogo, setSiteLogo] = useState<string | null>(null);
   
   // Data states
+  const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
   const [deals, setDeals] = useState<Deal[]>(MOCK_DEALS);
   const [campaigns, setCampaigns] = useState<Campaign[]>(MOCK_CAMPAIGNS);
@@ -304,6 +307,8 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   };
 
   // --- CRUD Functions ---
+  const deleteUser = (userId: number) => setUsers(prev => prev.filter(u => u.id !== userId));
+
   const addLead = (leadData: Omit<Lead, 'id' | 'createdAt' | 'history' | 'lastFeedback' | 'notes' | 'lastStage' | 'reminder'>) => {
     const newLead: Lead = {
       ...leadData,
@@ -437,6 +442,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     editingAccount, setEditingAccount,
     isChangePasswordModalOpen, setIsChangePasswordModalOpen,
     // Data and functions
+    users, deleteUser,
     leads, addLead,
     deals, addDeal, deleteDeal,
     campaigns, addCampaign, deleteCampaign,
