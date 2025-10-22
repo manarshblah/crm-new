@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 // FIX: Corrected component import path to avoid conflict with `components.tsx`.
@@ -27,7 +26,6 @@ export const LoginPage = () => {
                     <h2 className="text-4xl font-bold">{t('hello')}</h2>
                     <p className="mt-2 text-primary-200 max-w-md">{t('crmDescription')}</p>
                 </div>
-                 <Button className="self-start" variant="secondary">{t('search')}</Button>
             </div>
             <div className="w-full lg:w-1/2 bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-8">
                 <div className="max-w-md w-full space-y-8">
