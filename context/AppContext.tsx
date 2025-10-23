@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Theme, Language, Page, Lead, User, Deal, Campaign, Developer, Project, Unit, Owner } from '../types';
 import { translations, MOCK_USERS, MOCK_CONNECTED_ACCOUNTS, MOCK_LEADS, MOCK_DEALS, MOCK_CAMPAIGNS, MOCK_DEVELOPERS, MOCK_PROJECTS, MOCK_UNITS, MOCK_OWNERS } from '../constants';
@@ -169,7 +170,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(MOCK_USERS[0]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [primaryColor, setPrimaryColor] = useState('#3b82f6'); // Default blue
-  const [activeSubPageColor, setActiveSubPageColorState] = useState('#f97316'); // Default orange
+  const [activeSubPageColor, setActiveSubPageColorState] = useState('#91beee'); // User requested color
   const [siteLogo, setSiteLogo] = useState<string | null>(null);
   
   // Data states

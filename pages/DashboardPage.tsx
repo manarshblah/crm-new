@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 // FIX: Corrected component import path to avoid conflict with `components.tsx`.
@@ -20,10 +19,10 @@ export const DashboardPage = () => {
     }, []);
 
     const stats = [
-        { title: t('todayNewLeads'), value: 0, icon: <TargetIcon className="w-8 h-8 text-primary"/> },
-        { title: t('todayTouchedLeads'), value: 0, icon: <UsersIcon className="w-8 h-8 text-green-500"/> },
-        { title: t('todayUntouchedLeads'), value: 0, icon: <UsersIcon className="w-8 h-8 text-yellow-500"/> },
-        { title: t('delayedLeads'), value: 1, icon: <UsersIcon className="w-8 h-8 text-red-500"/> },
+        { title: t('todayNewLeads'), value: 0, icon: <TargetIcon className="w-8 h-8 text-gray-900"/>, bgColor: 'bg-[#f9e8e8]' },
+        { title: t('todayTouchedLeads'), value: 0, icon: <UsersIcon className="w-8 h-8 text-gray-900"/>, bgColor: 'bg-[#e6f2e2]' },
+        { title: t('todayUntouchedLeads'), value: 0, icon: <UsersIcon className="w-8 h-8 text-gray-900"/>, bgColor: 'bg-[#f8f0e7]' },
+        { title: t('delayedLeads'), value: 1, icon: <UsersIcon className="w-8 h-8 text-gray-900"/>, bgColor: 'bg-[#f6f2fc]' },
     ];
     
     // As per requirement, stages report shows no data.
@@ -46,15 +45,14 @@ export const DashboardPage = () => {
         <PageWrapper title={t('dashboard')}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map(stat => (
-                    // FIX: Wrapped Card in a div with a key to resolve TypeScript error about key prop not being in CardProps.
                     <div key={stat.title}>
-                        <Card>
+                        <Card className={`h-full ${stat.bgColor} text-gray-900`}>
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
+                                <div className="p-3 bg-black/5 rounded-full">
                                     {stat.icon}
                                 </div>
                                 <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">{stat.title}</p>
+                                    <p className="text-sm text-gray-700">{stat.title}</p>
                                     <p className="text-2xl font-bold">{stat.value}</p>
                                 </div>
                             </div>
@@ -85,8 +83,8 @@ export const DashboardPage = () => {
                     )}
                 </Card>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                <Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                <Card className="lg:col-span-1">
                     <h2 className="text-lg font-semibold mb-4">{t('topUsers')}</h2>
                     <div className="space-y-4">
                         {topUsers.map(user => (
@@ -100,7 +98,7 @@ export const DashboardPage = () => {
                         ))}
                     </div>
                 </Card>
-                <Card>
+                <Card className="lg:col-span-2">
                     <h2 className="text-lg font-semibold mb-4">{t('latestFeedbacks')}</h2>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
