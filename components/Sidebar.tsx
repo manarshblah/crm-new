@@ -1,7 +1,6 @@
 
 
 
-
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 // FIX: Import translations to be used for type casting.
@@ -79,7 +78,7 @@ export const Sidebar = () => {
                     <XIcon className="h-6 w-6" />
                 </Button>
             </div>
-            <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+            <nav className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
                 {SIDEBAR_ITEMS.map((item) => {
                     const isOpen = openSubMenus[item.name] ?? false;
                     const itemNameKey = toCamelCase(item.name) as keyof typeof translations.en;

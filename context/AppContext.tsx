@@ -253,7 +253,6 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     setLanguage(lang);
     localStorage.setItem('language', lang);
     document.documentElement.lang = lang;
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   }
 
   const setAppColor = (color: string) => {

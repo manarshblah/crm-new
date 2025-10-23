@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { Sidebar, Header, PageWrapper, AddLeadModal, AddActionModal, AssignLeadModal, FilterDrawer, AddDeveloperModal, AddProjectModal, AddUnitModal, UnitsFilterDrawer, AddOwnerModal, EditOwnerModal, DealsFilterDrawer, EditUserModal, DeleteUserModal, AddCampaignModal, ManageIntegrationAccountModal, ChangePasswordModal, EditDeveloperModal, EditProjectModal } from './components/index';
@@ -67,7 +68,7 @@ const TheApp = () => {
     }
 
     return (
-        <div dir={language === 'ar' ? 'rtl' : 'ltr'} className={`${language === 'ar' ? 'font-arabic' : 'font-sans'} bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100`}>
+        <div className={`${language === 'ar' ? 'font-arabic' : 'font-sans'} bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100`}>
             <div className="relative min-h-screen">
                 <Sidebar />
                 {isSidebarOpen && (
