@@ -21,8 +21,8 @@ const Select = ({ id, children, value, onChange }: { id: string; children?: Reac
 const getPlatformName = (currentPage: Page): string => {
     switch (currentPage) {
         case 'Integrations':
-        case 'Facebook':
-            return 'Facebook';
+        case 'Meta':
+            return 'Meta';
         case 'TikTok':
             return 'TikTok';
         case 'WhatsApp':
@@ -49,7 +49,8 @@ export const ManageIntegrationAccountModal = () => {
     const [status, setStatus] = useState<'Connected' | 'Disconnected'>('Connected');
 
     const platformName = getPlatformName(currentPage);
-    const platformKey = platformName.toLowerCase() as 'facebook' | 'tiktok' | 'whatsapp';
+    // Map Meta to 'facebook' for dataKey compatibility (API will use company-specific keys)
+    const platformKey = (platformName.toLowerCase() === 'meta' ? 'facebook' : platformName.toLowerCase()) as 'facebook' | 'tiktok' | 'whatsapp';
     const isEditMode = !!editingAccount;
 
     useEffect(() => {
@@ -106,7 +107,7 @@ export const ManageIntegrationAccountModal = () => {
     
     const renderPlatformFields = () => {
         switch (platformName) {
-            case 'Facebook':
+            case 'Meta':
             case 'TikTok':
                 return (
                     <>

@@ -34,7 +34,7 @@ const OwnersTable = ({ owners, onEdit, onDelete }: { owners: Owner[], onEdit: (o
                                     <Button variant="ghost" className="p-1 h-auto" onClick={() => onEdit(owner)}>
                                         <EditIcon className="w-4 h-4" />
                                     </Button>
-                                    <Button variant="ghost" className="p-1 h-auto text-red-500 hover:bg-red-100 dark:hover:bg-red-900" onClick={() => onDelete(owner.id)}>
+                                    <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(owner.id)}>
                                         <TrashIcon className="w-4 h-4" />
                                     </Button>
                                 </div>
@@ -53,13 +53,29 @@ const OwnersTable = ({ owners, onEdit, onDelete }: { owners: Owner[], onEdit: (o
 
 
 export const OwnersPage = () => {
-    const { t, setIsAddOwnerModalOpen, owners, deleteOwner, setEditingOwner, setIsEditOwnerModalOpen } = useAppContext();
+    const { t, currentUser, setIsAddOwnerModalOpen, owners, deleteOwner, setEditingOwner, setIsEditOwnerModalOpen } = useAppContext();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const timer = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timer);
     }, []);
+
+    // Check if user's company specialization is real_estate
+    const isRealEstate = currentUser?.company?.specialization === 'real_estate';
+
+    // If not real estate, show message
+    if (!isRealEstate) {
+        return (
+            <PageWrapper title={t('owners')}>
+                <Card>
+                    <div className="text-center py-12">
+                        <p className="text-gray-600 dark:text-gray-400">{t('realEstateOnly') || 'This page is only available for Real Estate companies.'}</p>
+                    </div>
+                </Card>
+            </PageWrapper>
+        );
+    }
 
     const handleEdit = (owner: Owner) => {
         setEditingOwner(owner);

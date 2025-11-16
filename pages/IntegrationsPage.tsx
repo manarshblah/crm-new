@@ -15,7 +15,7 @@ type PlatformDetails = {
 };
 
 const platformConfig: Record<string, { name: string, icon: React.FC<React.SVGProps<SVGSVGElement>>, dataKey: keyof ReturnType<typeof useAppContext>['connectedAccounts'] }> = {
-    'Facebook': { name: 'Facebook', icon: FacebookIcon, dataKey: 'facebook' },
+    'Meta': { name: 'Meta', icon: FacebookIcon, dataKey: 'facebook' },
     'TikTok': { name: 'TikTok', icon: TikTokIcon, dataKey: 'tiktok' },
     'WhatsApp': { name: 'WhatsApp', icon: WhatsappIcon, dataKey: 'whatsapp' },
 };
@@ -29,8 +29,8 @@ export const IntegrationsPage = () => {
     
         switch (page) {
             case 'Integrations':
-            case 'Facebook':
-                platformKey = 'Facebook';
+            case 'Meta':
+                platformKey = 'Meta';
                 break;
             case 'TikTok':
                 platformKey = 'TikTok';

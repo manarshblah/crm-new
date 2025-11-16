@@ -38,7 +38,7 @@ const CampaignsTable = ({ campaigns, onDelete }: { campaigns: Campaign[], onDele
                                 </span>
                             </td>
                             <td className="px-6 py-4">
-                                <Button variant="ghost" className="p-1 h-auto text-red-500 hover:bg-red-100 dark:hover:bg-red-900" onClick={() => onDelete(campaign.id)}>
+                                <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(campaign.id)}>
                                     <TrashIcon className="w-4 h-4" />
                                 </Button>
                             </td>

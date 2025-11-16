@@ -8,9 +8,17 @@ export type Page =
   // Sub-pages
   | 'All Leads' | 'Fresh Leads' | 'Cold Leads' | 'My Leads' | 'Rotated Leads'
   | 'Properties' | 'Owners'
+  | 'Services' | 'Service Packages' | 'Service Providers'
+  | 'Products' | 'Product Categories' | 'Suppliers'
   | 'Campaigns'
   | 'Teams Report' | 'Employees Report' | 'Marketing Report'
-  | 'Facebook' | 'TikTok' | 'WhatsApp';
+  | 'Meta' | 'TikTok' | 'WhatsApp';
+
+export interface Company {
+  id: number;
+  name: string;
+  specialization: 'real_estate' | 'services' | 'products';
+}
 
 export interface User {
   id: number;
@@ -19,6 +27,9 @@ export interface User {
   phone: string;
   avatar: string;
   email?: string;
+  username?: string;
+  password?: string;
+  company?: Company;
 }
 
 export interface TimelineEntry {
@@ -136,6 +147,77 @@ export interface Owner {
   district: string;
   name: string;
   phone: string;
+}
+
+// Services Types
+export interface Service {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  price: number;
+  duration: string; // e.g., "1 hour", "30 minutes"
+  category: string;
+  provider?: string;
+  isActive: boolean;
+}
+
+export interface ServicePackage {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  price: number;
+  services: number[]; // Service IDs
+  duration: string;
+  isActive: boolean;
+}
+
+export interface ServiceProvider {
+  id: number;
+  code: string;
+  name: string;
+  logo: string;
+  phone: string;
+  email: string;
+  specialization: string;
+  rating?: number;
+}
+
+// Products Types
+export interface Product {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  price: number;
+  cost: number;
+  stock: number;
+  category: string;
+  supplier?: string;
+  sku?: string;
+  image?: string;
+  isActive: boolean;
+}
+
+export interface ProductCategory {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  parentCategory?: number; // For nested categories
+}
+
+export interface Supplier {
+  id: number;
+  code: string;
+  name: string;
+  logo: string;
+  phone: string;
+  email: string;
+  address: string;
+  contactPerson: string;
+  specialization: string;
 }
 
 // Settings Page Types

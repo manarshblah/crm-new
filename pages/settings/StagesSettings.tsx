@@ -68,7 +68,7 @@ export const StagesSettings = () => {
                                </div>
                             </div>
                              <div className="flex-shrink-0 flex items-center justify-center">
-                                <Button variant="ghost" className="p-1 h-auto text-red-500">
+                                <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20">
                                     <TrashIcon className="w-5 h-5" />
                                 </Button>
                             </div>

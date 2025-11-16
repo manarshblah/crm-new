@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { PageWrapper, Button, Card, Dropdown, DropdownItem, WhatsappIcon, Loader } from '../components/index';
+import { PageWrapper, Button, Card, Dropdown, DropdownItem, WhatsappIcon, Loader, PlusIcon } from '../components/index';
 import { User } from '../types';
 
 const UserCard = ({ user }: { user: User }) => {
@@ -38,8 +38,8 @@ const UserCard = ({ user }: { user: User }) => {
                 <div className="flex gap-2 mt-4">
                     <Button variant="secondary" className="text-xs px-3 py-1 h-auto">{t('call')}</Button>
                     <a href={`https://wa.me/${user.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
-                        <Button variant="secondary" className="text-xs px-3 py-1 h-auto !bg-green-500 text-white hover:!bg-green-600">
-                           <WhatsappIcon className="w-4 h-4" />
+                        <Button variant="secondary" className="text-xs px-3 py-1 h-auto !bg-green-500 text-white hover:!bg-green-600 flex items-center gap-1.5">
+                           <span className="hidden sm:inline">WhatsApp</span>
                         </Button>
                     </a>
                 </div>
@@ -50,10 +50,13 @@ const UserCard = ({ user }: { user: User }) => {
 
 
 export const UsersPage = () => {
-    const { t, users } = useAppContext();
+    const { t, users, currentUser, setIsAddUserModalOpen } = useAppContext();
     const [autoAssign, setAutoAssign] = useState(true);
     const [loading, setLoading] = useState(true);
     const userCount = users.length;
+    
+    // Check if current user is admin (Owner role)
+    const isAdmin = currentUser?.role === 'Owner';
 
     useEffect(() => {
         const timer = setTimeout(() => setLoading(false), 1000);
@@ -74,13 +77,23 @@ export const UsersPage = () => {
         <PageWrapper
             title={`${t('users')}: ${userCount}`}
             actions={
-                <Button 
-                    variant={autoAssign ? 'secondary' : 'danger'}
-                    onClick={() => setAutoAssign(!autoAssign)}
-                    className={`min-w-[180px] ${autoAssign ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'}`}
-                >
-                    {t('autoAssignment')}: {autoAssign ? t('on') : t('off')}
-                </Button>
+                <>
+                    {isAdmin && (
+                        <Button 
+                            onClick={() => setIsAddUserModalOpen(true)}
+                            className="w-full sm:w-auto"
+                        >
+                            <PlusIcon className="w-4 h-4" /> {t('createUser')}
+                        </Button>
+                    )}
+                    <Button 
+                        variant={autoAssign ? 'secondary' : 'danger'}
+                        onClick={() => setAutoAssign(!autoAssign)}
+                        className={`min-w-[180px] ${autoAssign ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'}`}
+                    >
+                        {t('autoAssignment')}: {autoAssign ? t('on') : t('off')}
+                    </Button>
+                </>
             }
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

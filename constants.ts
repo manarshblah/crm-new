@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Page, Lead, User, Deal, Todo, Campaign, TimelineEntry, Activity, Developer, Project, Unit, Owner, Channel, Stage, Status } from './types';
+import { Page, Lead, User, Deal, Todo, Campaign, TimelineEntry, Activity, Developer, Project, Unit, Owner, Channel, Stage, Status, Service, ServicePackage, ServiceProvider, Product, ProductCategory, Supplier } from './types';
 import { ChartIcon, CheckSquareIcon, ChevronsUpDownIcon, FileTextIcon, HandshakeIcon, MegaphoneIcon, SettingsIcon, ShoppingBagIcon, StarIcon, TargetIcon, UsersIcon } from './components/index';
 
 export const SIDEBAR_ITEMS: { 
@@ -18,15 +18,16 @@ export const SIDEBAR_ITEMS: {
   { name: 'Marketing', icon: MegaphoneIcon, subItems: ['Campaigns'] },
   { name: 'Todos', icon: CheckSquareIcon },
   { name: 'Reports', icon: FileTextIcon, subItems: ['Teams Report', 'Employees Report', 'Marketing Report'] },
-  { name: 'Integrations', icon: ChevronsUpDownIcon, subItems: ['Facebook', 'TikTok', 'WhatsApp'] },
+  { name: 'Integrations', icon: ChevronsUpDownIcon, subItems: ['Meta', 'TikTok', 'WhatsApp'] },
 ];
 
 export const SETTINGS_ITEM = { name: 'Settings', icon: SettingsIcon };
 
 export const MOCK_USERS: User[] = [
-  { id: 1, name: 'Admin', role: 'Owner', phone: '+1234567890', avatar: 'https://picsum.photos/id/1005/200/200', email: 'admin@example.com' },
-  { id: 2, name: 'John Doe', role: 'Sales Agent', phone: '+1987654321', avatar: 'https://picsum.photos/id/1011/200/200', email: 'john.doe@example.com' },
-  { id: 3, name: 'Jane Smith', role: 'Sales Manager', phone: '+1122334455', avatar: 'https://picsum.photos/id/1012/200/200', email: 'jane.smith@example.com' },
+  { id: 1, name: 'Admin', role: 'Owner', phone: '+1234567890', avatar: 'https://picsum.photos/id/1005/200/200', email: 'admin@example.com', username: 'admin', password: 'admin123', company: { id: 1, name: 'Real Estate Co.', specialization: 'real_estate' } },
+  { id: 2, name: 'John Doe', role: 'Sales Agent', phone: '+1987654321', avatar: 'https://picsum.photos/id/1011/200/200', email: 'john.doe@example.com', username: 'johndoe', password: 'password123', company: { id: 1, name: 'Real Estate Co.', specialization: 'real_estate' } },
+  { id: 3, name: 'Jane Smith', role: 'Sales Manager', phone: '+1122334455', avatar: 'https://picsum.photos/id/1012/200/200', email: 'jane.smith@example.com', username: 'janesmith', password: 'password123', company: { id: 2, name: 'Services Co.', specialization: 'services' } },
+  { id: 4, name: 'Mike Johnson', role: 'Sales Agent', phone: '+1555666777', avatar: 'https://picsum.photos/id/1013/200/200', email: 'mike.johnson@example.com', username: 'mikejohnson', password: 'password123', company: { id: 3, name: 'Products Co.', specialization: 'products' } },
 ];
 
 export const MOCK_TIMELINE: TimelineEntry[] = [
@@ -92,6 +93,41 @@ export const MOCK_OWNERS: Owner[] = [
     { id: 1, code: 'OWN001', city: 'Riyadh', district: 'Al Malaz', name: 'Abdullah Al-Fahd', phone: '+966501234567' },
     { id: 2, code: 'OWN002', city: 'Jeddah', district: 'Al-Hamra', name: 'Fatima Al-Zahrani', phone: '+966559876543' },
     { id: 3, code: 'OWN003', city: 'Dammam', district: 'Al-Shati', name: 'Mohammed bin Saleh', phone: '+966533219876' },
+];
+
+// Services Mock Data
+export const MOCK_SERVICES: Service[] = [
+    { id: 1, code: 'SVC001', name: 'Consultation Service', description: 'Professional consultation', price: 500, duration: '1 hour', category: 'Consulting', isActive: true },
+    { id: 2, code: 'SVC002', name: 'Maintenance Service', description: 'Regular maintenance', price: 300, duration: '2 hours', category: 'Maintenance', isActive: true },
+    { id: 3, code: 'SVC003', name: 'Installation Service', description: 'Product installation', price: 800, duration: '3 hours', category: 'Installation', isActive: true },
+];
+
+export const MOCK_SERVICE_PACKAGES: ServicePackage[] = [
+    { id: 1, code: 'PKG001', name: 'Premium Package', description: 'Complete service package', price: 2000, services: [1, 2], duration: '1 day', isActive: true },
+    { id: 2, code: 'PKG002', name: 'Basic Package', description: 'Basic service package', price: 1000, services: [2], duration: '4 hours', isActive: true },
+];
+
+export const MOCK_SERVICE_PROVIDERS: ServiceProvider[] = [
+    { id: 1, code: 'PRV001', name: 'Tech Solutions', logo: 'https://picsum.photos/seed/provider1/40/40', phone: '+966501111111', email: 'info@techsolutions.com', specialization: 'IT Services', rating: 4.5 },
+    { id: 2, code: 'PRV002', name: 'Maintenance Pro', logo: 'https://picsum.photos/seed/provider2/40/40', phone: '+966502222222', email: 'info@maintenancepro.com', specialization: 'Maintenance', rating: 4.8 },
+];
+
+// Products Mock Data
+export const MOCK_PRODUCTS: Product[] = [
+    { id: 1, code: 'PRD001', name: 'Product A', description: 'High quality product', price: 1500, cost: 1000, stock: 50, category: 'Electronics', sku: 'SKU-001', isActive: true },
+    { id: 2, code: 'PRD002', name: 'Product B', description: 'Premium product', price: 2500, cost: 1800, stock: 30, category: 'Electronics', sku: 'SKU-002', isActive: true },
+    { id: 3, code: 'PRD003', name: 'Product C', description: 'Standard product', price: 800, cost: 500, stock: 100, category: 'Accessories', sku: 'SKU-003', isActive: true },
+];
+
+export const MOCK_PRODUCT_CATEGORIES: ProductCategory[] = [
+    { id: 1, code: 'CAT001', name: 'Electronics', description: 'Electronic products' },
+    { id: 2, code: 'CAT002', name: 'Accessories', description: 'Product accessories' },
+    { id: 3, code: 'CAT003', name: 'Software', description: 'Software products' },
+];
+
+export const MOCK_SUPPLIERS: Supplier[] = [
+    { id: 1, code: 'SUP001', name: 'Global Supplies', logo: 'https://picsum.photos/seed/supplier1/40/40', phone: '+966503333333', email: 'info@globalsupplies.com', address: 'Riyadh, Saudi Arabia', contactPerson: 'Ahmed Ali', specialization: 'Electronics' },
+    { id: 2, code: 'SUP002', name: 'Tech Distributors', logo: 'https://picsum.photos/seed/supplier2/40/40', phone: '+966504444444', email: 'info@techdist.com', address: 'Jeddah, Saudi Arabia', contactPerson: 'Sarah Mohammed', specialization: 'IT Equipment' },
 ];
 
 export const MOCK_TEAMS = [
@@ -167,7 +203,7 @@ export const MOCK_STATUSES: Status[] = [
 
 export const translations = {
     en: {
-        hello: "Hello Deal CRM! 👋",
+        hello: "Hello LOOP CRM! 👋",
         welcomeBack: "Welcome Back!",
         signInToContinue: "Sign in to continue managing your customer relationships efficiently.",
         crmWelcome: "The future of customer relationship management.",
@@ -175,6 +211,8 @@ export const translations = {
         username: "Username",
         password: "Password",
         signIn: "Sign In",
+        pleaseEnterCredentials: "Please enter username and password",
+        invalidCredentials: "Invalid username or password",
         search: "Search",
         searchEllipsis: "Search...",
         all: "All",
@@ -203,7 +241,8 @@ export const translations = {
         employeesReport: "Employees Report",
         marketingReport: "Marketing Report",
         integrations: "Integrations",
-        facebook: "Facebook",
+        meta: "Meta",
+        facebook: "Facebook", // Keep for backward compatibility with data
         tikTok: "TikTok",
         whatsApp: "WhatsApp",
         // FIX: Added missing translation key.
@@ -269,6 +308,26 @@ export const translations = {
         addDeveloper: "Add Developer",
         addProject: "Add Project",
         addUnit: "Add Unit",
+        // Services
+        services: "Services",
+        servicePackages: "Service Packages",
+        serviceProviders: "Service Providers",
+        duration: "Duration",
+        rating: "Rating",
+        // Products
+        products: "Products",
+        productCategories: "Product Categories",
+        suppliers: "Suppliers",
+        cost: "Cost",
+        stock: "Stock",
+        sku: "SKU",
+        contactPerson: "Contact Person",
+        specialization: "Specialization",
+        realEstateOnly: "This page is only available for Real Estate companies.",
+        servicesOnly: "This page is only available for Services companies.",
+        productsOnly: "This page is only available for Products companies.",
+        active: "Active",
+        inactive: "Inactive",
         units: "Units",
         projects: "Projects",
         developers: "Developers",
@@ -314,8 +373,19 @@ export const translations = {
         on: "On",
         off: "Off",
         viewUser: "View User",
+        createUser: "Create User",
         editUser: "Edit User",
         deleteUser: "Delete User",
+        salesAssistant: "Sales Assistant",
+        owner: "Owner",
+        nameRequired: "Name is required",
+        usernameRequired: "Username is required",
+        emailRequired: "Email is required",
+        passwordRequired: "Password is required",
+        phoneRequired: "Phone is required",
+        roleRequired: "Role is required",
+        invalidEmail: "Invalid email format",
+        passwordMinLength: "Password must be at least 6 characters",
         // Campaigns
         addCampaign: "Add Campaign",
         isActive: "Is Active",
@@ -377,7 +447,6 @@ export const translations = {
         availableStatuses: "Available Statuses",
         addStatus: "Add Status",
         category: "Category",
-        inactive: "Inactive",
         followUp: "Follow Up",
         closed: "Closed",
         // Modals & Drawers general
@@ -534,7 +603,6 @@ export const translations = {
         enterCampaignName: "Enter campaign name",
         enterCampaignCode: "Enter campaign code",
         enterCampaignBudget: "Enter campaign budget",
-        active: "Active",
         // AddIntegrationAccountModal
         addNew: "Add New",
         account: "Account",
@@ -575,6 +643,8 @@ export const translations = {
         username: "اسم المستخدم",
         password: "كلمة المرور",
         signIn: "تسجيل الدخول",
+        pleaseEnterCredentials: "الرجاء إدخال اسم المستخدم وكلمة المرور",
+        invalidCredentials: "اسم المستخدم أو كلمة المرور غير صحيحة",
         search: "بحث",
         searchEllipsis: "بحث...",
         all: "الكل",
@@ -603,7 +673,8 @@ export const translations = {
         employeesReport: "تقرير الموظفين",
         marketingReport: "تقرير التسويق",
         integrations: "التكاملات",
-        facebook: "فيسبوك",
+        meta: "Meta",
+        facebook: "فيسبوك", // Keep for backward compatibility with data
         tikTok: "تيك توك",
         whatsApp: "واتساب",
         // FIX: Added missing translation key.
@@ -669,6 +740,26 @@ export const translations = {
         addDeveloper: "إضافة مطور",
         addProject: "إضافة مشروع",
         addUnit: "إضافة وحدة",
+        // Services
+        services: "الخدمات",
+        servicePackages: "باقات الخدمات",
+        serviceProviders: "مقدمي الخدمات",
+        duration: "المدة",
+        rating: "التقييم",
+        // Products
+        products: "المنتجات",
+        productCategories: "فئات المنتجات",
+        suppliers: "الموردون",
+        cost: "التكلفة",
+        stock: "المخزون",
+        sku: "رمز المنتج",
+        contactPerson: "الشخص المسؤول",
+        specialization: "التخصص",
+        realEstateOnly: "هذه الصفحة متاحة فقط لشركات العقارات.",
+        servicesOnly: "هذه الصفحة متاحة فقط لشركات الخدمات.",
+        productsOnly: "هذه الصفحة متاحة فقط لشركات المنتجات.",
+        active: "نشط",
+        inactive: "غير نشط",
         units: "الوحدات",
         projects: "المشاريع",
         developers: "المطورون",
@@ -714,8 +805,19 @@ export const translations = {
         on: "مفعل",
         off: "معطل",
         viewUser: "عرض المستخدم",
+        createUser: "إنشاء مستخدم",
         editUser: "تعديل المستخدم",
         deleteUser: "حذف المستخدم",
+        salesAssistant: "مساعد مبيعات",
+        owner: "المالك",
+        nameRequired: "الاسم مطلوب",
+        usernameRequired: "اسم المستخدم مطلوب",
+        emailRequired: "البريد الإلكتروني مطلوب",
+        passwordRequired: "كلمة المرور مطلوبة",
+        phoneRequired: "رقم الهاتف مطلوب",
+        roleRequired: "الدور مطلوب",
+        invalidEmail: "صيغة البريد الإلكتروني غير صحيحة",
+        passwordMinLength: "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
         // Campaigns
         addCampaign: "إضافة حملة",
         isActive: "نشطة",
@@ -777,7 +879,6 @@ export const translations = {
         availableStatuses: "الحالات المتاحة",
         addStatus: "إضافة حالة",
         category: "الفئة",
-        inactive: "غير نشط",
         followUp: "متابعة",
         closed: "مغلق",
         // Modals & Drawers general
@@ -934,7 +1035,6 @@ export const translations = {
         enterCampaignName: "أدخل اسم الحملة",
         enterCampaignCode: "أدخل رمز الحملة",
         enterCampaignBudget: "أدخل ميزانية الحملة",
-        active: "نشط",
         // AddIntegrationAccountModal
         addNew: "Add New",
         account: "حساب",

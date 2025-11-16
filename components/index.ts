@@ -26,6 +26,7 @@ export * from './modals/EditOwnerModal';
 export * from './modals/EditDeveloperModal';
 export * from './modals/EditProjectModal';
 export * from './drawers/DealsFilterDrawer';
+export * from './modals/AddUserModal';
 export * from './modals/EditUserModal';
 export * from './modals/DeleteUserModal';
 export * from './modals/AddCampaignModal';

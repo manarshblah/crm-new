@@ -43,56 +43,62 @@ export const DashboardPage = () => {
 
     return (
         <PageWrapper title={t('dashboard')}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {stats.map(stat => (
                     <div key={stat.title}>
                         <Card className={`h-full ${stat.bgColor} text-gray-900`}>
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-black/5 rounded-full">
+                            <div className="flex items-center gap-3 sm:gap-4">
+                                <div className="p-2 sm:p-3 bg-black/5 rounded-full flex-shrink-0">
                                     {stat.icon}
                                 </div>
-                                <div>
-                                    <p className="text-sm text-gray-700">{stat.title}</p>
-                                    <p className="text-2xl font-bold">{stat.value}</p>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs sm:text-sm text-gray-700 truncate">{stat.title}</p>
+                                    <p className="text-xl sm:text-2xl font-bold">{stat.value}</p>
                                 </div>
                             </div>
                         </Card>
                     </div>
                 ))}
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6">
                 <Card className="lg:col-span-2">
-                     <h2 className="text-lg font-semibold mb-4">{t('weekLeadsReport')}</h2>
-                     <WeekLeadsChart />
+                     <h2 className="text-base sm:text-lg font-semibold mb-4">{t('weekLeadsReport')}</h2>
+                     <div className="overflow-x-auto">
+                         <div className="min-w-[300px]">
+                             <WeekLeadsChart />
+                         </div>
+                     </div>
                 </Card>
                 <Card>
-                    <h2 className="text-lg font-semibold mb-4">{t('stagesReport')}</h2>
+                    <h2 className="text-base sm:text-lg font-semibold mb-4">{t('stagesReport')}</h2>
                     {stagesData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={300}>
-                          <PieChart>
-                            <Pie data={stagesData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                              {stagesData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
+                        <div className="h-[250px] sm:h-[300px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie data={stagesData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label>
+                                {stagesData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
+                              </Pie>
+                              <Tooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
                     ) : (
-                        <div className="flex items-center justify-center h-[300px] text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center justify-center h-[250px] sm:h-[300px] text-gray-500 dark:text-gray-400">
                             {t('noDataAvailable')}
                         </div>
                     )}
                 </Card>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6">
                 <Card className="lg:col-span-1">
-                    <h2 className="text-lg font-semibold mb-4">{t('topUsers')}</h2>
-                    <div className="space-y-4">
+                    <h2 className="text-base sm:text-lg font-semibold mb-4">{t('topUsers')}</h2>
+                    <div className="space-y-3 sm:space-y-4">
                         {topUsers.map(user => (
                             <div key={user.id} className="flex items-center gap-3">
-                                <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
-                                <div>
-                                    <p className="font-semibold">{user.name}</p>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">{user.role}</p>
+                                <img src={user.avatar} alt={user.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-semibold text-sm sm:text-base truncate">{user.name}</p>
+                                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{user.role}</p>
                                 </div>
                             </div>
                         ))}
@@ -100,38 +106,42 @@ export const DashboardPage = () => {
                 </Card>
                 <Card className="lg:col-span-2">
                     <h2 className="text-lg font-semibold mb-4">{t('latestFeedbacks')}</h2>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                <tr>
-                                    <th scope="col" className="px-6 py-3">{t('date')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('user')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('lead')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('stage')}</th>
-                                    <th scope="col" className="px-6 py-3">{t('lastFeedback')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {latestFeedbacks.map(feedback => {
-                                    const lead = MOCK_LEADS.find(l => l.name === feedback.lead);
-                                    return (
-                                        <tr key={feedback.id} className="bg-white dark:bg-dark-card border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                            <td className="px-6 py-4 whitespace-nowrap">{feedback.date}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap">{feedback.user}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap">{feedback.lead}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {lead && (
-                                                    <span className="bg-primary text-primary-foreground font-semibold px-2 py-1 rounded-full text-xs">
-                                                        {lead.lastStage}
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4">{feedback.notes}</td>
+                    <div className="overflow-x-auto -mx-4 sm:mx-0">
+                        <div className="min-w-full inline-block align-middle">
+                            <div className="overflow-hidden">
+                                <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 min-w-[600px]">
+                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                        <tr>
+                                            <th scope="col" className="px-3 sm:px-6 py-3">{t('date')}</th>
+                                            <th scope="col" className="px-3 sm:px-6 py-3">{t('user')}</th>
+                                            <th scope="col" className="px-3 sm:px-6 py-3">{t('lead')}</th>
+                                            <th scope="col" className="px-3 sm:px-6 py-3 hidden sm:table-cell">{t('stage')}</th>
+                                            <th scope="col" className="px-3 sm:px-6 py-3">{t('lastFeedback')}</th>
                                         </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                    </thead>
+                                    <tbody>
+                                        {latestFeedbacks.map(feedback => {
+                                            const lead = MOCK_LEADS.find(l => l.name === feedback.lead);
+                                            return (
+                                                <tr key={feedback.id} className="bg-white dark:bg-dark-card border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">{feedback.date}</td>
+                                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">{feedback.user}</td>
+                                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">{feedback.lead}</td>
+                                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                                                        {lead && (
+                                                            <span className="bg-primary text-primary-foreground font-semibold px-2 py-1 rounded-full text-xs">
+                                                                {lead.lastStage}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm max-w-xs truncate">{feedback.notes}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </Card>
             </div>

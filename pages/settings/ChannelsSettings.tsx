@@ -141,7 +141,7 @@ export const ChannelsSettings = () => {
                                         </Select>
                                     </td>
                                     <td className="p-2">
-                                        <Button variant="ghost" className="p-1 h-auto text-red-500" onClick={() => handleDeleteChannel(channel.id)}>
+                                        <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => handleDeleteChannel(channel.id)}>
                                             <TrashIcon className="w-4 h-4" />
                                         </Button>
                                     </td>

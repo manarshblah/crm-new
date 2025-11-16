@@ -141,7 +141,7 @@ export const TodosPage = () => {
                                                 <p className="text-sm text-gray-600 dark:text-gray-400">{todo.leadName} - {todo.leadPhone}</p>
                                                 <p className="text-xs text-gray-500">{new Date(todo.dueDate).toLocaleDateString()}</p>
                                             </div>
-                                            <Button variant="ghost" className="p-2 h-auto text-green-500 hover:bg-green-100 dark:hover:bg-green-900" onClick={() => handleCompleteTodo(todo.id)}>
+                                            <Button variant="ghost" className="p-2 h-auto !text-green-600 dark:!text-green-400 hover:!bg-green-50 dark:hover:!bg-green-900/20" onClick={() => handleCompleteTodo(todo.id)}>
                                                 <CheckIcon className="w-6 h-6" />
                                             </Button>
                                         </Card>

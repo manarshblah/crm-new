@@ -32,7 +32,7 @@ export const ViewLeadPage = () => {
             title={selectedLead.name} 
             actions={
                 <div className="flex flex-wrap gap-2">
-                    <Button variant="secondary" className="text-red-500"><UserMinusIcon className="w-4 h-4"/> {t('unassign')}</Button>
+                    <Button variant="secondary" className="!text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20"><UserMinusIcon className="w-4 h-4"/> {t('unassign')}</Button>
                     {/* FIX: Corrected translation key from 'assignTo' to 'assignedTo' to match the key in constants.ts. */}
                     <Button variant="secondary"><UserPlusIcon className="w-4 h-4"/> {t('assignedTo')}</Button>
                     <Button variant="secondary"><DealIcon className="w-4 h-4"/> {t('addDeal')}</Button>

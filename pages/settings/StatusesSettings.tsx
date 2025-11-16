@@ -128,10 +128,10 @@ export const StatusesSettings = () => {
                                     </td>
                                     <td className="p-2">
                                         <div className="flex items-center gap-1">
-                                            <Button variant="ghost" className="p-1 h-auto text-gray-500" onClick={() => handleStatusChange(status.id, 'isHidden', !status.isHidden)}>
+                                            <Button variant="ghost" className="p-1 h-auto !text-gray-700 dark:!text-gray-300" onClick={() => handleStatusChange(status.id, 'isHidden', !status.isHidden)}>
                                                 {status.isHidden ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
                                             </Button>
-                                            <Button variant="ghost" className="p-1 h-auto text-red-500" disabled={status.isDefault} onClick={() => handleDeleteStatus(status.id)}>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" disabled={status.isDefault} onClick={() => handleDeleteStatus(status.id)}>
                                                 <TrashIcon className="w-4 h-4" />
                                             </Button>
                                         </div>

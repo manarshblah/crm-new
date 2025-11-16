@@ -4,22 +4,55 @@ import { useAppContext } from '../context/AppContext';
 import { Button, Input, EyeIcon, EyeOffIcon } from '../components/index';
 
 export const LoginPage = () => {
-    const { setIsLoggedIn, t, language } = useAppContext();
+    const { setIsLoggedIn, setCurrentUser, users, t, language } = useAppContext();
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const handleLogin = () => {
+        setError('');
+        
+        if (!username.trim() || !password.trim()) {
+            setError(t('pleaseEnterCredentials') || 'Please enter username and password');
+            return;
+        }
+
         setIsLoading(true);
+        
+        // Simulate network delay
         setTimeout(() => {
+            // Find user by username or email
+            const user = users.find(u => 
+                (u.username?.toLowerCase() === username.toLowerCase()) || 
+                (u.email?.toLowerCase() === username.toLowerCase())
+            );
+
+            if (!user) {
+                setError(t('invalidCredentials') || 'Invalid username or password');
+                setIsLoading(false);
+                return;
+            }
+
+            // Check password
+            if (user.password !== password) {
+                setError(t('invalidCredentials') || 'Invalid username or password');
+                setIsLoading(false);
+                return;
+            }
+
+            // Login successful
+            setCurrentUser(user);
             setIsLoggedIn(true);
-        }, 1500); // Simulate network delay
+        }, 1500);
     };
 
     return (
         <div className={`min-h-screen flex ${language === 'ar' ? 'font-arabic' : 'font-sans'}`}>
             <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-primary-700 to-primary-500 text-white p-12 flex-col justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Deal CRM</h1>
+                    <h1 className="text-3xl font-bold">LOOP CRM</h1>
                     <p className="mt-4 text-primary-200">{t('crmWelcome')}</p>
                 </div>
                 <div>
@@ -34,9 +67,27 @@ export const LoginPage = () => {
                         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">{t('signInToContinue')}</p>
                     </div>
                     <div className="space-y-6">
+                        {error && (
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-md text-sm">
+                                {error}
+                            </div>
+                        )}
                         <div>
                             <label htmlFor="username" className="sr-only">{t('username')}</label>
-                            <Input id="username" placeholder={t('username')} />
+                            <Input 
+                                id="username" 
+                                placeholder={t('username') || 'Username or Email'}
+                                value={username}
+                                onChange={(e) => {
+                                    setUsername(e.target.value);
+                                    setError('');
+                                }}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleLogin();
+                                    }
+                                }}
+                            />
                         </div>
                         <div className="relative">
                            <label htmlFor="password" className="sr-only">{t('password')}</label>
@@ -44,6 +95,16 @@ export const LoginPage = () => {
                                 id="password" 
                                 type={passwordVisible ? 'text' : 'password'}
                                 placeholder={t('password')} 
+                                value={password}
+                                onChange={(e) => {
+                                    setPassword(e.target.value);
+                                    setError('');
+                                }}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleLogin();
+                                    }
+                                }}
                            />
                            <button 
                                 type="button"
@@ -54,7 +115,7 @@ export const LoginPage = () => {
                            </button>
                         </div>
                         <div>
-                            <Button onClick={handleLogin} className="w-full" loading={isLoading}>
+                            <Button onClick={handleLogin} className="w-full" loading={isLoading} disabled={isLoading}>
                                 {t('signIn')}
                             </Button>
                         </div>

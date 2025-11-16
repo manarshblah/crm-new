@@ -50,7 +50,7 @@ const SidebarItem = ({ name, icon: Icon, isActive, hasSubItems, isSubItem, isOpe
 
 
 export const Sidebar = () => {
-    const { currentPage, setCurrentPage, setIsLoggedIn, isSidebarOpen, setIsSidebarOpen, t, siteLogo } = useAppContext();
+    const { currentPage, setCurrentPage, setIsLoggedIn, isSidebarOpen, setIsSidebarOpen, t, siteLogo, currentUser } = useAppContext();
     const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({});
 
     const handleToggleSubMenu = (name: string) => {
@@ -64,6 +64,21 @@ export const Sidebar = () => {
         }
     };
 
+    // Get inventory sub-items based on company specialization
+    const getInventorySubItems = (): PageType[] => {
+        const specialization = currentUser?.company?.specialization;
+        switch (specialization) {
+            case 'real_estate':
+                return ['Properties', 'Owners'];
+            case 'services':
+                return ['Services', 'Service Packages', 'Service Providers'];
+            case 'products':
+                return ['Products', 'Product Categories', 'Suppliers'];
+            default:
+                return ['Properties', 'Owners']; // Default to real estate
+        }
+    };
+
     return (
         <aside className={`fixed inset-y-0 z-40 flex h-full w-64 flex-col bg-gray-100 dark:bg-gray-900 border-e dark:border-gray-800 rtl:border-e-0 rtl:border-s transform transition-transform duration-300 ease-in-out 
                             lg:translate-x-0 
@@ -71,7 +86,7 @@ export const Sidebar = () => {
             <div className="flex items-center justify-between p-4 border-b dark:border-gray-800 h-16">
                 <div className="flex items-center gap-2">
                     {siteLogo && <img src={siteLogo} alt="Site Logo" className="h-10 object-contain" />}
-                    <h1 className="text-xl font-bold text-primary">Deal CRM</h1>
+                    <h1 className="text-xl font-bold text-primary">LOOP CRM</h1>
                 </div>
                 {/* FIX: The Button component requires children. */}
                 <Button variant="ghost" className="lg:hidden p-1 -mr-2 rtl:-mr-0 rtl:-ml-2" onClick={() => setIsSidebarOpen(false)}>
@@ -82,19 +97,21 @@ export const Sidebar = () => {
                 {SIDEBAR_ITEMS.map((item) => {
                     const isOpen = openSubMenus[item.name] ?? false;
                     const itemNameKey = toCamelCase(item.name) as keyof typeof translations.en;
+                    // Override subItems for Inventory based on company specialization
+                    const subItems = item.name === 'Inventory' ? getInventorySubItems() : item.subItems;
                     return (
                         <div key={item.name}>
                             <SidebarItem
                                 name={t(itemNameKey)}
                                 icon={item.icon}
-                                isActive={currentPage === item.name || (!!item.subItems && item.subItems.some(sub => sub === currentPage))}
-                                hasSubItems={!!item.subItems}
+                                isActive={currentPage === item.name || (!!subItems && subItems.some(sub => sub === currentPage))}
+                                hasSubItems={!!subItems}
                                 isOpen={isOpen}
-                                onClick={() => item.subItems ? handleToggleSubMenu(item.name) : handleNavigation(item.name)}
+                                onClick={() => subItems ? handleToggleSubMenu(item.name) : handleNavigation(item.name)}
                             />
-                            {item.subItems && isOpen && (
+                            {subItems && isOpen && (
                                 <div className="ps-4 mt-1 space-y-1">
-                                    {item.subItems.map(sub => {
+                                    {subItems.map(sub => {
                                         const subItemNameKey = toCamelCase(sub) as keyof typeof translations.en;
                                         return (
                                             // FIX: The `key` prop is for React's internal use and should not be passed to the component.

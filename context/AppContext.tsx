@@ -1,8 +1,8 @@
 
 
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { Theme, Language, Page, Lead, User, Deal, Campaign, Developer, Project, Unit, Owner } from '../types';
-import { translations, MOCK_USERS, MOCK_CONNECTED_ACCOUNTS, MOCK_LEADS, MOCK_DEALS, MOCK_CAMPAIGNS, MOCK_DEVELOPERS, MOCK_PROJECTS, MOCK_UNITS, MOCK_OWNERS } from '../constants';
+import { Theme, Language, Page, Lead, User, Deal, Campaign, Developer, Project, Unit, Owner, Service, ServicePackage, ServiceProvider, Product, ProductCategory, Supplier } from '../types';
+import { translations, MOCK_USERS, MOCK_CONNECTED_ACCOUNTS, MOCK_LEADS, MOCK_DEALS, MOCK_CAMPAIGNS, MOCK_DEVELOPERS, MOCK_PROJECTS, MOCK_UNITS, MOCK_OWNERS, MOCK_SERVICES, MOCK_SERVICE_PACKAGES, MOCK_SERVICE_PROVIDERS, MOCK_PRODUCTS, MOCK_PRODUCT_CATEGORIES, MOCK_SUPPLIERS } from '../constants';
 
 // --- Helper Functions ---
 const hexToHsl = (hex: string): [number, number, number] | null => {
@@ -102,6 +102,8 @@ export interface AppContextType {
   setIsDealsFilterDrawerOpen: (isOpen: boolean) => void;
 
   // Users states
+  isAddUserModalOpen: boolean;
+  setIsAddUserModalOpen: (isOpen: boolean) => void;
   isEditUserModalOpen: boolean;
   setIsEditUserModalOpen: (isOpen: boolean) => void;
   isDeleteUserModalOpen: boolean;
@@ -125,6 +127,7 @@ export interface AppContextType {
 
   // Data states
   users: User[];
+  addUser: (user: Omit<User, 'id' | 'avatar'>) => void;
   deleteUser: (userId: number) => void;
   leads: Lead[];
   addLead: (lead: Omit<Lead, 'id' | 'createdAt' | 'history' | 'lastFeedback' | 'notes' | 'lastStage' | 'reminder'>) => void;
@@ -148,6 +151,32 @@ export interface AppContextType {
   addOwner: (owner: Omit<Owner, 'id' | 'code'>) => void;
   updateOwner: (owner: Owner) => void;
   deleteOwner: (ownerId: number) => void;
+  // Services data
+  services: Service[];
+  addService: (service: Omit<Service, 'id' | 'code'>) => void;
+  updateService: (service: Service) => void;
+  deleteService: (serviceId: number) => void;
+  servicePackages: ServicePackage[];
+  addServicePackage: (servicePackage: Omit<ServicePackage, 'id' | 'code'>) => void;
+  updateServicePackage: (servicePackage: ServicePackage) => void;
+  deleteServicePackage: (packageId: number) => void;
+  serviceProviders: ServiceProvider[];
+  addServiceProvider: (provider: Omit<ServiceProvider, 'id' | 'code'>) => void;
+  updateServiceProvider: (provider: ServiceProvider) => void;
+  deleteServiceProvider: (providerId: number) => void;
+  // Products data
+  products: Product[];
+  addProduct: (product: Omit<Product, 'id' | 'code'>) => void;
+  updateProduct: (product: Product) => void;
+  deleteProduct: (productId: number) => void;
+  productCategories: ProductCategory[];
+  addProductCategory: (category: Omit<ProductCategory, 'id' | 'code'>) => void;
+  updateProductCategory: (category: ProductCategory) => void;
+  deleteProductCategory: (categoryId: number) => void;
+  suppliers: Supplier[];
+  addSupplier: (supplier: Omit<Supplier, 'id' | 'code'>) => void;
+  updateSupplier: (supplier: Supplier) => void;
+  deleteSupplier: (supplierId: number) => void;
 }
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -163,11 +192,26 @@ type AppProviderProps = { children?: ReactNode };
 export const AppProvider = ({ children }: AppProviderProps) => {
   const [theme, setThemeState] = useState<Theme>('light');
   const [language, setLanguage] = useState<Language>('en');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedInState] = useState(() => {
+    const stored = localStorage.getItem('isLoggedIn');
+    return stored === 'true';
+  });
   const [currentPage, setCurrentPage] = useState<Page>('Dashboard');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(MOCK_USERS[0]);
+  const [currentUser, setCurrentUserState] = useState<User | null>(() => {
+    const stored = localStorage.getItem('currentUser');
+    if (stored) {
+      try {
+        const user = JSON.parse(stored);
+        // Find the user in the users array to get the latest data
+        return MOCK_USERS.find(u => u.id === user.id) || user;
+      } catch {
+        return MOCK_USERS[0];
+      }
+    }
+    return MOCK_USERS[0];
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [primaryColor, setPrimaryColor] = useState('#3b82f6'); // Default blue
   const [activeSubPageColor, setActiveSubPageColorState] = useState('#91beee'); // User requested color
@@ -182,6 +226,14 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   const [units, setUnits] = useState<Unit[]>(MOCK_UNITS);
   const [owners, setOwners] = useState<Owner[]>(MOCK_OWNERS);
+  // Services data
+  const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
+  const [servicePackages, setServicePackages] = useState<ServicePackage[]>(MOCK_SERVICE_PACKAGES);
+  const [serviceProviders, setServiceProviders] = useState<ServiceProvider[]>(MOCK_SERVICE_PROVIDERS);
+  // Products data
+  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>(MOCK_PRODUCT_CATEGORIES);
+  const [suppliers, setSuppliers] = useState<Supplier[]>(MOCK_SUPPLIERS);
   
   // Modals and drawers state
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
@@ -207,6 +259,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [isDealsFilterDrawerOpen, setIsDealsFilterDrawerOpen] = useState(false);
   
   // Users state
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
   const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
   
@@ -234,6 +287,22 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     const storedLogo = localStorage.getItem('siteLogo');
     if (storedLogo) setSiteLogo(storedLogo);
 
+    // Load current user from localStorage if logged in
+    if (isLoggedIn) {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          const user = users.find(u => u.id === userData.id) || MOCK_USERS.find(u => u.id === userData.id);
+          if (user) {
+            setCurrentUserState(user);
+          }
+        } catch {
+          // If error, keep default user
+        }
+      }
+    }
+
     const handleResize = () => {
         if (window.innerWidth >= 1024) { // Tailwind's lg breakpoint
             setIsSidebarOpen(false);
@@ -241,7 +310,25 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isLoggedIn, users]);
+
+  const setIsLoggedIn = (loggedIn: boolean) => {
+    setIsLoggedInState(loggedIn);
+    localStorage.setItem('isLoggedIn', loggedIn.toString());
+    if (!loggedIn) {
+      localStorage.removeItem('currentUser');
+      setCurrentUserState(null);
+    }
+  };
+
+  const setCurrentUser = (user: User | null) => {
+    setCurrentUserState(user);
+    if (user) {
+      localStorage.setItem('currentUser', JSON.stringify({ id: user.id, name: user.name, role: user.role }));
+    } else {
+      localStorage.removeItem('currentUser');
+    }
+  };
 
   const setTheme = (theme: Theme) => {
     setThemeState(theme);
@@ -307,6 +394,14 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   };
 
   // --- CRUD Functions ---
+  const addUser = (userData: Omit<User, 'id' | 'avatar'>) => {
+    const newUser: User = {
+      ...userData,
+      id: Date.now(),
+      avatar: `https://picsum.photos/id/${Math.floor(Math.random() * 1000)}/200/200`,
+    };
+    setUsers(prev => [...prev, newUser]);
+  };
   const deleteUser = (userId: number) => setUsers(prev => prev.filter(u => u.id !== userId));
 
   const addLead = (leadData: Omit<Lead, 'id' | 'createdAt' | 'history' | 'lastFeedback' | 'notes' | 'lastStage' | 'reminder'>) => {
@@ -403,6 +498,110 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   };
   const deleteOwner = (ownerId: number) => setOwners(prev => prev.filter(o => o.id !== ownerId));
 
+  // Services CRUD
+  const addService = (serviceData: Omit<Service, 'id' | 'code'>) => {
+    const lastCodeNum = services.reduce((max, s) => {
+      const num = parseInt(s.code.replace('SVC', ''));
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+    const newService: Service = {
+      ...serviceData,
+      id: Date.now(),
+      code: `SVC${(lastCodeNum + 1).toString().padStart(3, '0')}`
+    };
+    setServices(prev => [newService, ...prev]);
+  };
+  const updateService = (updatedService: Service) => {
+    setServices(prev => prev.map(s => s.id === updatedService.id ? updatedService : s));
+  };
+  const deleteService = (serviceId: number) => setServices(prev => prev.filter(s => s.id !== serviceId));
+
+  const addServicePackage = (packageData: Omit<ServicePackage, 'id' | 'code'>) => {
+    const lastCodeNum = servicePackages.reduce((max, p) => {
+      const num = parseInt(p.code.replace('PKG', ''));
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+    const newPackage: ServicePackage = {
+      ...packageData,
+      id: Date.now(),
+      code: `PKG${(lastCodeNum + 1).toString().padStart(3, '0')}`
+    };
+    setServicePackages(prev => [newPackage, ...prev]);
+  };
+  const updateServicePackage = (updatedPackage: ServicePackage) => {
+    setServicePackages(prev => prev.map(p => p.id === updatedPackage.id ? updatedPackage : p));
+  };
+  const deleteServicePackage = (packageId: number) => setServicePackages(prev => prev.filter(p => p.id !== packageId));
+
+  const addServiceProvider = (providerData: Omit<ServiceProvider, 'id' | 'code'>) => {
+    const lastCodeNum = serviceProviders.reduce((max, p) => {
+      const num = parseInt(p.code.replace('PRV', ''));
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+    const newProvider: ServiceProvider = {
+      ...providerData,
+      id: Date.now(),
+      code: `PRV${(lastCodeNum + 1).toString().padStart(3, '0')}`
+    };
+    setServiceProviders(prev => [newProvider, ...prev]);
+  };
+  const updateServiceProvider = (updatedProvider: ServiceProvider) => {
+    setServiceProviders(prev => prev.map(p => p.id === updatedProvider.id ? updatedProvider : p));
+  };
+  const deleteServiceProvider = (providerId: number) => setServiceProviders(prev => prev.filter(p => p.id !== providerId));
+
+  // Products CRUD
+  const addProduct = (productData: Omit<Product, 'id' | 'code'>) => {
+    const lastCodeNum = products.reduce((max, p) => {
+      const num = parseInt(p.code.replace('PRD', ''));
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+    const newProduct: Product = {
+      ...productData,
+      id: Date.now(),
+      code: `PRD${(lastCodeNum + 1).toString().padStart(3, '0')}`
+    };
+    setProducts(prev => [newProduct, ...prev]);
+  };
+  const updateProduct = (updatedProduct: Product) => {
+    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+  };
+  const deleteProduct = (productId: number) => setProducts(prev => prev.filter(p => p.id !== productId));
+
+  const addProductCategory = (categoryData: Omit<ProductCategory, 'id' | 'code'>) => {
+    const lastCodeNum = productCategories.reduce((max, c) => {
+      const num = parseInt(c.code.replace('CAT', ''));
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+    const newCategory: ProductCategory = {
+      ...categoryData,
+      id: Date.now(),
+      code: `CAT${(lastCodeNum + 1).toString().padStart(3, '0')}`
+    };
+    setProductCategories(prev => [newCategory, ...prev]);
+  };
+  const updateProductCategory = (updatedCategory: ProductCategory) => {
+    setProductCategories(prev => prev.map(c => c.id === updatedCategory.id ? updatedCategory : c));
+  };
+  const deleteProductCategory = (categoryId: number) => setProductCategories(prev => prev.filter(c => c.id !== categoryId));
+
+  const addSupplier = (supplierData: Omit<Supplier, 'id' | 'code'>) => {
+    const lastCodeNum = suppliers.reduce((max, s) => {
+      const num = parseInt(s.code.replace('SUP', ''));
+      return !isNaN(num) && num > max ? num : max;
+    }, 0);
+    const newSupplier: Supplier = {
+      ...supplierData,
+      id: Date.now(),
+      code: `SUP${(lastCodeNum + 1).toString().padStart(3, '0')}`
+    };
+    setSuppliers(prev => [newSupplier, ...prev]);
+  };
+  const updateSupplier = (updatedSupplier: Supplier) => {
+    setSuppliers(prev => prev.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
+  };
+  const deleteSupplier = (supplierId: number) => setSuppliers(prev => prev.filter(s => s.id !== supplierId));
+
 
   const value: AppContextType = { 
     theme, setTheme, 
@@ -434,6 +633,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     isEditProjectModalOpen, setIsEditProjectModalOpen,
     editingProject, setEditingProject,
     isDealsFilterDrawerOpen, setIsDealsFilterDrawerOpen,
+    isAddUserModalOpen, setIsAddUserModalOpen,
     isEditUserModalOpen, setIsEditUserModalOpen,
     isDeleteUserModalOpen, setIsDeleteUserModalOpen,
     isAddCampaignModalOpen, setIsAddCampaignModalOpen,
@@ -442,7 +642,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     editingAccount, setEditingAccount,
     isChangePasswordModalOpen, setIsChangePasswordModalOpen,
     // Data and functions
-    users, deleteUser,
+    users, addUser, deleteUser,
     leads, addLead,
     deals, addDeal, deleteDeal,
     campaigns, addCampaign, deleteCampaign,
@@ -450,6 +650,14 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     projects, addProject, updateProject, deleteProject,
     units, addUnit,
     owners, addOwner, updateOwner, deleteOwner,
+    // Services
+    services, addService, updateService, deleteService,
+    servicePackages, addServicePackage, updateServicePackage, deleteServicePackage,
+    serviceProviders, addServiceProvider, updateServiceProvider, deleteServiceProvider,
+    // Products
+    products, addProduct, updateProduct, deleteProduct,
+    productCategories, addProductCategory, updateProductCategory, deleteProductCategory,
+    suppliers, addSupplier, updateSupplier, deleteSupplier,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

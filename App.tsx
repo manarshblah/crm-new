@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
-import { Sidebar, Header, PageWrapper, AddLeadModal, AddActionModal, AssignLeadModal, FilterDrawer, AddDeveloperModal, AddProjectModal, AddUnitModal, UnitsFilterDrawer, AddOwnerModal, EditOwnerModal, DealsFilterDrawer, EditUserModal, DeleteUserModal, AddCampaignModal, ManageIntegrationAccountModal, ChangePasswordModal, EditDeveloperModal, EditProjectModal } from './components/index';
-import { ActivitiesPage, CampaignsPage, CreateDealPage, DashboardPage, DealsPage, EmployeesReportPage, IntegrationsPage, LeadsPage, LoginPage, MarketingReportPage, OwnersPage, ProfilePage, PropertiesPage, SettingsPage, TeamsReportPage, TodosPage, UsersPage, ViewLeadPage } from './pages';
+import { Sidebar, Header, PageWrapper, AddLeadModal, AddActionModal, AssignLeadModal, FilterDrawer, AddDeveloperModal, AddProjectModal, AddUnitModal, UnitsFilterDrawer, AddOwnerModal, EditOwnerModal, DealsFilterDrawer, AddUserModal, EditUserModal, DeleteUserModal, AddCampaignModal, ManageIntegrationAccountModal, ChangePasswordModal, EditDeveloperModal, EditProjectModal } from './components/index';
+import { ActivitiesPage, CampaignsPage, CreateDealPage, DashboardPage, DealsPage, EmployeesReportPage, IntegrationsPage, LeadsPage, LoginPage, MarketingReportPage, OwnersPage, ProfilePage, PropertiesPage, SettingsPage, TeamsReportPage, TodosPage, UsersPage, ViewLeadPage, ServicesInventoryPage, ProductsInventoryPage, ServicesPage, ServicePackagesPage, ServiceProvidersPage, ProductsPage, ProductCategoriesPage, SuppliersPage } from './pages';
 
 const CurrentPageContent = () => {
     const { currentPage } = useAppContext();
@@ -24,6 +24,18 @@ const CurrentPageContent = () => {
         case 'Inventory':
         case 'Properties':
             return <PropertiesPage />;
+        case 'Services':
+            return <ServicesPage />;
+        case 'Service Packages':
+            return <ServicePackagesPage />;
+        case 'Service Providers':
+            return <ServiceProvidersPage />;
+        case 'Products':
+            return <ProductsPage />;
+        case 'Product Categories':
+            return <ProductCategoriesPage />;
+        case 'Suppliers':
+            return <SuppliersPage />;
         case 'Owners':
             return <OwnersPage />;
         case 'Deals':
@@ -45,7 +57,7 @@ const CurrentPageContent = () => {
         case 'Marketing Report':
             return <MarketingReportPage />;
         case 'Integrations':
-        case 'Facebook':
+        case 'Meta':
         case 'TikTok':
         case 'WhatsApp':
             return <IntegrationsPage key={currentPage} />;
@@ -98,6 +110,7 @@ const TheApp = () => {
                 <EditOwnerModal />
                 <EditDeveloperModal />
                 <EditProjectModal />
+                <AddUserModal />
                 <EditUserModal />
                 <DeleteUserModal />
                 <AddCampaignModal />
