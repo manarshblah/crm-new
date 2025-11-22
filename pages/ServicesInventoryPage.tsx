@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Loader } from '../components/index';
+import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Loader, EditIcon, TrashIcon } from '../components/index';
 import { Service, ServicePackage, ServiceProvider } from '../types';
 
 type Tab = 'services' | 'packages' | 'providers';
@@ -38,9 +38,13 @@ const ServicesTable = ({ services, onUpdate, onDelete }: { services: Service[], 
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-6 py-4">
-                                        <div className="flex gap-1 sm:gap-2 flex-wrap">
-                                            <Button variant="secondary" onClick={() => onUpdate(service)} className="text-xs sm:text-sm">{t('update')}</Button>
-                                            <Button variant="danger" onClick={() => onDelete(service.id)} className="text-xs sm:text-sm">{t('delete')}</Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" className="p-1 h-auto" onClick={() => onUpdate(service)}>
+                                                <EditIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(service.id)}>
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -85,9 +89,13 @@ const PackagesTable = ({ packages, onUpdate, onDelete }: { packages: ServicePack
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-6 py-4">
-                                        <div className="flex gap-1 sm:gap-2 flex-wrap">
-                                            <Button variant="secondary" onClick={() => onUpdate(pkg)} className="text-xs sm:text-sm">{t('update')}</Button>
-                                            <Button variant="danger" onClick={() => onDelete(pkg.id)} className="text-xs sm:text-sm">{t('delete')}</Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" className="p-1 h-auto" onClick={() => onUpdate(pkg)}>
+                                                <EditIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(pkg.id)}>
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -130,9 +138,13 @@ const ProvidersTable = ({ providers, onUpdate, onDelete }: { providers: ServiceP
                                     <td className="px-3 sm:px-6 py-4 hidden lg:table-cell text-xs sm:text-sm">{provider.email}</td>
                                     <td className="px-3 sm:px-6 py-4 hidden md:table-cell text-xs sm:text-sm">{provider.rating ? `⭐ ${provider.rating}` : '-'}</td>
                                     <td className="px-3 sm:px-6 py-4">
-                                        <div className="flex gap-1 sm:gap-2 flex-wrap">
-                                            <Button variant="secondary" onClick={() => onUpdate(provider)} className="text-xs sm:text-sm">{t('update')}</Button>
-                                            <Button variant="danger" onClick={() => onDelete(provider.id)} className="text-xs sm:text-sm">{t('delete')}</Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" className="p-1 h-auto" onClick={() => onUpdate(provider)}>
+                                                <EditIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(provider.id)}>
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -155,6 +167,8 @@ export const ServicesInventoryPage = () => {
         deleteService,
         deleteServicePackage,
         deleteServiceProvider,
+        setConfirmDeleteConfig,
+        setIsConfirmDeleteModalOpen,
     } = useAppContext();
     const [activeTab, setActiveTab] = useState<Tab>('services');
     const [loading, setLoading] = useState(true);
@@ -181,8 +195,17 @@ export const ServicesInventoryPage = () => {
     }
 
     const handleDeleteService = (id: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            deleteService(id);
+        const service = services.find(s => s.id === id);
+        if (service) {
+            setConfirmDeleteConfig({
+                title: t('deleteService') || 'Delete Service',
+                message: t('confirmDeleteService') || 'Are you sure you want to delete',
+                itemName: service.name,
+                onConfirm: async () => {
+                    await deleteService(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 
@@ -192,8 +215,17 @@ export const ServicesInventoryPage = () => {
     };
 
     const handleDeletePackage = (id: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            deleteServicePackage(id);
+        const pkg = servicePackages.find(p => p.id === id);
+        if (pkg) {
+            setConfirmDeleteConfig({
+                title: t('deleteServicePackage') || 'Delete Service Package',
+                message: t('confirmDeleteServicePackage') || 'Are you sure you want to delete',
+                itemName: pkg.name,
+                onConfirm: async () => {
+                    await deleteServicePackage(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 
@@ -203,8 +235,17 @@ export const ServicesInventoryPage = () => {
     };
 
     const handleDeleteProvider = (id: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            deleteServiceProvider(id);
+        const provider = serviceProviders.find(p => p.id === id);
+        if (provider) {
+            setConfirmDeleteConfig({
+                title: t('deleteServiceProvider') || 'Delete Service Provider',
+                message: t('confirmDeleteServiceProvider') || 'Are you sure you want to delete',
+                itemName: provider.name,
+                onConfirm: async () => {
+                    await deleteServiceProvider(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 
@@ -240,9 +281,9 @@ export const ServicesInventoryPage = () => {
         <PageWrapper title={t('services')}>
             <div className="border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto">
                 <nav className="-mb-px flex space-x-4 rtl:space-x-reverse min-w-max" aria-label="Tabs">
-                    <button onClick={() => setActiveTab('services')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'services' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>{t('services')}</button>
-                    <button onClick={() => setActiveTab('packages')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'packages' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>{t('servicePackages')}</button>
-                    <button onClick={() => setActiveTab('providers')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'providers' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>{t('serviceProviders')}</button>
+                    <button onClick={() => setActiveTab('services')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'services' ? 'border-primary text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-300'}`}>{t('services')}</button>
+                    <button onClick={() => setActiveTab('packages')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'packages' ? 'border-primary text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-300'}`}>{t('servicePackages')}</button>
+                    <button onClick={() => setActiveTab('providers')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'providers' ? 'border-primary text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-300'}`}>{t('serviceProviders')}</button>
                 </nav>
             </div>
             {renderContent()}

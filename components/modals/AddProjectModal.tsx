@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
@@ -21,27 +21,72 @@ export const AddProjectModal = () => {
     const { isAddProjectModalOpen, setIsAddProjectModalOpen, t, addProject, developers } = useAppContext();
     const [formState, setFormState] = useState({
         name: '',
-        developer: developers[0]?.name || '',
+        developer: '',
         type: 'Residential',
         city: '',
         paymentMethod: 'Cash',
     });
+
+    // تحديث developer عند فتح الـ modal أو عند تحميل developers
+    useEffect(() => {
+        if (isAddProjectModalOpen && developers.length > 0) {
+            setFormState(prev => {
+                // إذا كان developer فارغ، اختر الأول
+                if (!prev.developer) {
+                    return { ...prev, developer: developers[0].name };
+                }
+                return prev;
+            });
+        }
+    }, [isAddProjectModalOpen, developers]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
         setFormState(prev => ({ ...prev, [id]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        addProject(formState);
+        
+        // التحقق من أن الحقول المطلوبة مملوءة
+        if (!formState.name.trim()) {
+            alert(t('projectName') + ' is required');
+            return;
+        }
+        
+        if (!formState.developer) {
+            alert(t('developer') + ' is required');
+            return;
+        }
+        
+        if (developers.length === 0) {
+            alert('No developers available. Please add a developer first.');
+            return;
+        }
+        
+        try {
+            await addProject(formState);
+            handleClose();
+        } catch (error: any) {
+            console.error('Error adding project:', error);
+            alert(error?.message || 'Failed to add project. Please try again.');
+        }
+    };
+
+    const handleClose = () => {
         setIsAddProjectModalOpen(false);
-        // Reset form
-        setFormState({ name: '', developer: developers[0]?.name || '', type: 'Residential', city: '', paymentMethod: 'Cash' });
+        // Reset form عند الإغلاق
+        setFormState({
+            name: '',
+            developer: '',
+            type: 'Residential',
+            city: '',
+            paymentMethod: 'Cash',
+        });
     };
 
     return (
-        <Modal isOpen={isAddProjectModalOpen} onClose={() => setIsAddProjectModalOpen(false)} title={t('addNewProject')}>
+        <Modal isOpen={isAddProjectModalOpen} onClose={handleClose} title={t('addNewProject')}>
             <form onSubmit={handleSubmit} className="space-y-4">
                  <div>
                     <Label htmlFor="name">{t('projectName')}</Label>
@@ -50,6 +95,7 @@ export const AddProjectModal = () => {
                 <div>
                     <Label htmlFor="developer">{t('developer')}</Label>
                     <Select id="developer" value={formState.developer} onChange={handleChange}>
+                        <option value="">{t('selectDeveloper') || 'Select Developer'}</option>
                         {developers.map(dev => <option key={dev.id} value={dev.name}>{dev.name}</option>)}
                     </Select>
                 </div>

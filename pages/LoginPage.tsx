@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 // FIX: Corrected component import path to avoid conflict with `components.tsx`.
-import { Button, Input, EyeIcon, EyeOffIcon } from '../components/index';
+import { Button, Input, EyeIcon, EyeOffIcon, MoonIcon, SunIcon } from '../components/index';
+import { loginAPI, getCurrentUserAPI } from '../services/api';
 
 export const LoginPage = () => {
-    const { setIsLoggedIn, setCurrentUser, users, t, language } = useAppContext();
+    const { setIsLoggedIn, setCurrentUser, setCurrentPage, t, language, theme, setTheme } = useAppContext();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
         setError('');
         
         if (!username.trim() || !password.trim()) {
@@ -21,38 +22,55 @@ export const LoginPage = () => {
 
         setIsLoading(true);
         
-        // Simulate network delay
-        setTimeout(() => {
-            // Find user by username or email
-            const user = users.find(u => 
-                (u.username?.toLowerCase() === username.toLowerCase()) || 
-                (u.email?.toLowerCase() === username.toLowerCase())
-            );
-
-            if (!user) {
-                setError(t('invalidCredentials') || 'Invalid username or password');
-                setIsLoading(false);
-                return;
-            }
-
-            // Check password
-            if (user.password !== password) {
-                setError(t('invalidCredentials') || 'Invalid username or password');
-                setIsLoading(false);
-                return;
-            }
-
-            // Login successful
-            setCurrentUser(user);
+        try {
+            // تسجيل الدخول والحصول على token
+            const loginResponse = await loginAPI(username, password);
+            
+            // الحصول على بيانات المستخدم الكاملة
+            const userData = await getCurrentUserAPI();
+            
+            // تحويل بيانات المستخدم من API إلى تنسيق Frontend
+            const frontendUser = {
+                id: userData.id,
+                name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.username,
+                username: userData.username,
+                email: userData.email,
+                role: userData.role === 'admin' ? 'Owner' : userData.role === 'employee' ? 'Sales Agent' : userData.role,
+                phone: '', // API لا يحتوي على phone حالياً
+                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.username)}&background=random`,
+                company: userData.company ? {
+                    id: userData.company,
+                    name: loginResponse.user?.company_name || 'Unknown Company',
+                    specialization: 'real_estate' as const, // TODO: إضافة specialization في API
+                } : undefined,
+            };
+            
+            setCurrentUser(frontendUser);
             setIsLoggedIn(true);
-        }, 1500);
+            // Navigate to dashboard after successful login
+            window.history.replaceState({}, '', '/');
+            setCurrentPage('Dashboard');
+        } catch (error: any) {
+            setError(error.message || t('invalidCredentials') || 'Invalid username or password');
+            setIsLoading(false);
+        }
     };
 
     return (
-        <div className={`min-h-screen flex ${language === 'ar' ? 'font-arabic' : 'font-sans'}`}>
+        <div className={`min-h-screen flex ${language === 'ar' ? 'font-arabic' : 'font-sans'} relative`}>
+            {/* Theme Toggle Button */}
+            <div className="absolute top-4 end-4 z-10">
+                <Button variant="ghost" className="p-2 h-auto" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+                    {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
+                </Button>
+            </div>
             <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-primary-700 to-primary-500 text-white p-12 flex-col justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">LOOP CRM</h1>
+                    <img 
+                        src="/logo.png" 
+                        alt="LOOP CRM Logo" 
+                        className="h-20 w-auto object-contain mb-6" 
+                    />
                     <p className="mt-4 text-primary-200">{t('crmWelcome')}</p>
                 </div>
                 <div>
@@ -62,13 +80,18 @@ export const LoginPage = () => {
             </div>
             <div className="w-full lg:w-1/2 bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-8">
                 <div className="max-w-md w-full space-y-8">
-                    <div>
-                        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">{t('welcomeBack')}</h2>
-                        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">{t('signInToContinue')}</p>
+                    <div className="flex flex-col items-center">
+                        <img 
+                            src="/logo.png" 
+                            alt="LOOP CRM Logo" 
+                            className="h-12 w-auto object-contain mb-4 lg:hidden" 
+                        />
+                        <h2 className="mt-6 text-center text-3xl font-extrabold text-primary">{t('welcomeBack')}</h2>
+                        <p className="mt-2 text-center text-sm text-secondary">{t('signInToContinue')}</p>
                     </div>
                     <div className="space-y-6">
                         {error && (
-                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-md text-sm">
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 px-4 py-3 rounded-md text-sm">
                                 {error}
                             </div>
                         )}
@@ -118,6 +141,19 @@ export const LoginPage = () => {
                             <Button onClick={handleLogin} className="w-full" loading={isLoading} disabled={isLoading}>
                                 {t('signIn')}
                             </Button>
+                        </div>
+                        <div className="text-center">
+                            <p                                 className="text-sm text-secondary">
+                                {t('dontHaveAccount') || "Don't have an account?"}{' '}
+                                <button
+                                    onClick={() => {
+                                        window.location.href = '/register';
+                                    }}
+                                    className="text-primary-600 dark:text-primary-400 hover:underline font-medium"
+                                >
+                                    {t('register') || 'Register'}
+                                </button>
+                            </p>
                         </div>
                     </div>
                 </div>

@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { MOCK_USERS } from '../../constants';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
 import { Button } from '../Button';
@@ -20,18 +19,32 @@ const Select = ({ id, children, value, onChange }: { id: string; children?: Reac
 );
 
 export const AddLeadModal = () => {
-    const { isAddLeadModalOpen, setIsAddLeadModalOpen, t, addLead } = useAppContext();
+    const { isAddLeadModalOpen, setIsAddLeadModalOpen, t, addLead, users, currentUser } = useAppContext();
     const [formState, setFormState] = useState({
         name: '',
         phone: '',
         budget: '',
-        assignedTo: MOCK_USERS[0]?.id.toString() || '1',
-        authority: 'Decision Maker',
+        assignedTo: '',
         type: 'Fresh' as Lead['type'],
         communicationWay: 'Call',
         priority: 'Medium' as Lead['priority'],
-        channel: '',
+        status: 'Untouched' as Lead['status'],
     });
+
+    // Set default assignedTo to current user when modal opens or users load
+    useEffect(() => {
+        if (isAddLeadModalOpen && users.length > 0) {
+            const defaultUserId = currentUser?.id || users[0]?.id;
+            if (defaultUserId) {
+                setFormState(prev => {
+                    if (!prev.assignedTo) {
+                        return { ...prev, assignedTo: defaultUserId.toString() };
+                    }
+                    return prev;
+                });
+            }
+        }
+    }, [isAddLeadModalOpen, users.length, currentUser?.id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
@@ -48,18 +61,18 @@ export const AddLeadModal = () => {
             name: formState.name,
             phone: formState.phone,
             budget: Number(formState.budget) || 0,
-            assignedTo: Number(formState.assignedTo),
-            authority: formState.authority,
+            assignedTo: formState.assignedTo ? Number(formState.assignedTo) : 0,
             type: formState.type,
             communicationWay: formState.communicationWay,
             priority: formState.priority,
-            channel: formState.channel,
+            status: formState.status,
         });
         setIsAddLeadModalOpen(false);
         // Reset form
+        const defaultUserId = currentUser?.id || users[0]?.id || '';
         setFormState({
-            name: '', phone: '', budget: '', assignedTo: '1', authority: 'Decision Maker',
-            type: 'Fresh', communicationWay: 'Call', priority: 'Medium', channel: '',
+            name: '', phone: '', budget: '', assignedTo: defaultUserId.toString(),
+            type: 'Fresh', communicationWay: 'Call', priority: 'Medium', status: 'Untouched',
         });
     };
 
@@ -82,14 +95,8 @@ export const AddLeadModal = () => {
                      <div>
                         <Label htmlFor="assignedTo">{t('assignedTo')}</Label>
                         <Select id="assignedTo" value={formState.assignedTo} onChange={handleChange}>
-                            {MOCK_USERS.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
-                        </Select>
-                    </div>
-                    <div>
-                        <Label htmlFor="authority">{t('authority')}</Label>
-                        <Select id="authority" value={formState.authority} onChange={handleChange}>
-                            <option>{t('decisionMaker')}</option>
-                            <option>{t('influencer')}</option>
+                            <option value="">{t('selectEmployee') || 'Select Employee'}</option>
+                            {users.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
                         </Select>
                     </div>
                     <div>
@@ -99,12 +106,11 @@ export const AddLeadModal = () => {
                             <option value="Cold">{t('cold')}</option>
                         </Select>
                     </div>
-                     <div>
+                    <div>
                         <Label htmlFor="communicationWay">{t('communicationWay')}</Label>
                         <Select id="communicationWay" value={formState.communicationWay} onChange={handleChange}>
-                            <option>{t('call')}</option>
-                            <option>{t('whatsapp')}</option>
-                            <option>{t('email')}</option>
+                            <option value="Call">{t('call')}</option>
+                            <option value="WhatsApp">{t('whatsapp')}</option>
                         </Select>
                     </div>
                     <div>
@@ -115,9 +121,16 @@ export const AddLeadModal = () => {
                             <option value="Low">{t('low')}</option>
                         </Select>
                     </div>
-                     <div>
-                        <Label htmlFor="channel">{t('channel')}</Label>
-                        <Input id="channel" placeholder={t('egFacebookAd')} value={formState.channel} onChange={handleChange} />
+                    <div>
+                        <Label htmlFor="status">{t('status')}</Label>
+                        <Select id="status" value={formState.status} onChange={handleChange}>
+                            <option value="Untouched">{t('untouched') || 'Untouched'}</option>
+                            <option value="Touched">{t('touched') || 'Touched'}</option>
+                            <option value="Following">{t('following') || 'Following'}</option>
+                            <option value="Meeting">{t('meeting') || 'Meeting'}</option>
+                            <option value="No Answer">{t('noAnswer') || 'No Answer'}</option>
+                            <option value="Out Of Service">{t('outOfService') || 'Out Of Service'}</option>
+                        </Select>
                     </div>
                 </div>
                 {/* <div>

@@ -23,183 +23,6 @@ export const SIDEBAR_ITEMS: {
 
 export const SETTINGS_ITEM = { name: 'Settings', icon: SettingsIcon };
 
-export const MOCK_USERS: User[] = [
-  { id: 1, name: 'Admin', role: 'Owner', phone: '+1234567890', avatar: 'https://picsum.photos/id/1005/200/200', email: 'admin@example.com', username: 'admin', password: 'admin123', company: { id: 1, name: 'Real Estate Co.', specialization: 'real_estate' } },
-  { id: 2, name: 'John Doe', role: 'Sales Agent', phone: '+1987654321', avatar: 'https://picsum.photos/id/1011/200/200', email: 'john.doe@example.com', username: 'johndoe', password: 'password123', company: { id: 1, name: 'Real Estate Co.', specialization: 'real_estate' } },
-  { id: 3, name: 'Jane Smith', role: 'Sales Manager', phone: '+1122334455', avatar: 'https://picsum.photos/id/1012/200/200', email: 'jane.smith@example.com', username: 'janesmith', password: 'password123', company: { id: 2, name: 'Services Co.', specialization: 'services' } },
-  { id: 4, name: 'Mike Johnson', role: 'Sales Agent', phone: '+1555666777', avatar: 'https://picsum.photos/id/1013/200/200', email: 'mike.johnson@example.com', username: 'mikejohnson', password: 'password123', company: { id: 3, name: 'Products Co.', specialization: 'products' } },
-];
-
-export const MOCK_TIMELINE: TimelineEntry[] = [
-    { id: 1, user: 'Admin', avatar: 'https://picsum.photos/id/1005/200/200', action: 'Lead Created', details: 'Lead was created from Facebook Ad channel.', date: '2024-10-21 09:15' },
-    { id: 2, user: 'John Doe', avatar: 'https://picsum.photos/id/1011/200/200', action: 'Call Logged', details: 'No answer on first call attempt.', date: '2024-10-21 14:30' },
-    { id: 3, user: 'Admin', avatar: 'https://picsum.photos/id/1005/200/200', action: 'Data Modified', details: 'Updated budget from 700000 to 750000.', date: '2024-10-22 11:00' },
-];
-
-export const MOCK_LEADS: Lead[] = [
-  { id: 1, name: 'Ahmed Amiri', phone: '+96612345678', lastFeedback: 'Initial contact made', notes: 'Interested in property X', lastStage: 'FOLLOWING', reminder: '2024-10-25 10:00', status: 'Touched', type: 'Fresh', assignedTo: 1, budget: 500000, authority: 'Decision Maker', communicationWay: 'Call', priority: 'High', channel: 'Facebook Ad', createdAt: '2024-10-20 10:00', history: MOCK_TIMELINE.slice(0,1) },
-  { id: 2, name: 'Test 2', phone: '+96687654321', lastFeedback: 'No answer on first call', notes: '', lastStage: 'NO ANSWER', reminder: '2024-10-22 14:00', status: 'Untouched', type: 'Fresh', assignedTo: 2, budget: 750000, authority: 'Influencer', communicationWay: 'Call', priority: 'Medium', channel: 'Website', createdAt: '2024-10-21 09:15', history: MOCK_TIMELINE },
-];
-
-export const MOCK_DEALS: Deal[] = [
-    { id: 1, clientName: 'Ahmed Amiri', unit: 'Villa #12', paymentMethod: 'Cash', status: 'Reservation', value: 500000, project: 'Downtown Dubai', startDate: '2024-10-20', closedDate: '2024-11-20', startedBy: 2, closedBy: 3 },
-    { id: 2, clientName: 'Test 2', unit: 'Apt 301', paymentMethod: 'Installment', status: 'Contracted', value: 750000, project: 'Palm Jumeirah', startDate: '2024-09-15', closedDate: '2024-12-15', startedBy: 2, closedBy: 2 },
-    // FIX: Changed 'name' to 'clientName' to conform to the Deal interface.
-    { id: 3, clientName: 'New Client', unit: 'Penthouse A', paymentMethod: 'Cash', status: 'Closed', value: 1200000, project: 'Downtown Dubai', startDate: '2024-10-01', closedDate: '2024-10-10', startedBy: 3, closedBy: 3 },
-];
-
-export const MOCK_ACTIVITIES: Activity[] = [
-    { id: 1, user: 'John Doe', lead: 'Ahmed Amiri', type: 'Call', date: '2024-10-21 14:30', notes: 'No answer on first call attempt.' },
-    { id: 2, user: 'Admin', lead: 'Test 2', type: 'Note', date: '2024-10-22 11:00', notes: 'Updated budget from 700000 to 750000.' },
-    { id: 3, user: 'Jane Smith', lead: 'Ahmed Amiri', type: 'Meeting', date: '2024-10-23 10:00', notes: 'Scheduled a meeting for next week.' },
-    { id: 4, user: 'John Doe', lead: 'Test 2', type: 'Whatsapp', date: '2024-10-24 09:00', notes: 'Sent brochure via WhatsApp.' },
-];
-
-const getFutureDate = (days: number) => {
-    const date = new Date();
-    date.setDate(date.getDate() + days);
-    return date.toISOString().split('T')[0];
-};
-
-export const MOCK_TODOS: Todo[] = [
-    { id: 1, type: 'Hold Reminder', leadName: 'Ahmed Amiri', leadPhone: '+96612345678', dueDate: getFutureDate(2) }, // In 2 days
-    { id: 2, type: 'Call', leadName: 'Test 2', leadPhone: '+96687654321', dueDate: getFutureDate(0) }, // Today
-    { id: 3, type: 'Meeting', leadName: 'New Client', leadPhone: '+96655555555', dueDate: getFutureDate(1) }, // Tomorrow
-    { id: 4, type: 'Call', leadName: 'Sarah Johnson', leadPhone: '+1-555-0104', dueDate: getFutureDate(1) }, // Tomorrow
-    { id: 5, type: 'Meeting', leadName: 'Michael Brown', leadPhone: '+1-555-0105', dueDate: getFutureDate(3) }, // In 3 days
-    { id: 6, type: 'Call', leadName: 'Fatima Al-Zahrani', leadPhone: '+966559876543', dueDate: getFutureDate(0) }, // Today
-];
-
-export const MOCK_CAMPAIGNS: Campaign[] = [
-    { id: 1, name: 'Riyadh Summer Promo', code: 'RYS24', budget: 15000, createdAt: '2024-09-01', isActive: true },
-    { id: 2, name: 'Jeddah Waterfront Launch', code: 'JWL24', budget: 25000, createdAt: '2024-08-15', isActive: false },
-];
-
-export const MOCK_DEVELOPERS: Developer[] = [
-    { id: 1, code: 'DEV001', logo: 'https://picsum.photos/seed/dev1/40/40', name: 'Emaar Properties' },
-    { id: 2, code: 'DEV002', logo: 'https://picsum.photos/seed/dev2/40/40', name: 'Nakheel Properties' },
-];
-
-export const MOCK_PROJECTS: Project[] = [
-    { id: 1, code: 'PROJ001', name: 'Downtown Dubai', developer: 'Emaar Properties', type: 'Residential', city: 'Dubai', paymentMethod: 'Installments' },
-    { id: 2, code: 'PROJ002', name: 'Palm Jumeirah', developer: 'Nakheel Properties', type: 'Mixed-use', city: 'Dubai', paymentMethod: 'Cash' },
-];
-
-export const MOCK_UNITS: Unit[] = [
-    // Empty for now to show "No units found" message
-];
-
-export const MOCK_OWNERS: Owner[] = [
-    { id: 1, code: 'OWN001', city: 'Riyadh', district: 'Al Malaz', name: 'Abdullah Al-Fahd', phone: '+966501234567' },
-    { id: 2, code: 'OWN002', city: 'Jeddah', district: 'Al-Hamra', name: 'Fatima Al-Zahrani', phone: '+966559876543' },
-    { id: 3, code: 'OWN003', city: 'Dammam', district: 'Al-Shati', name: 'Mohammed bin Saleh', phone: '+966533219876' },
-];
-
-// Services Mock Data
-export const MOCK_SERVICES: Service[] = [
-    { id: 1, code: 'SVC001', name: 'Consultation Service', description: 'Professional consultation', price: 500, duration: '1 hour', category: 'Consulting', isActive: true },
-    { id: 2, code: 'SVC002', name: 'Maintenance Service', description: 'Regular maintenance', price: 300, duration: '2 hours', category: 'Maintenance', isActive: true },
-    { id: 3, code: 'SVC003', name: 'Installation Service', description: 'Product installation', price: 800, duration: '3 hours', category: 'Installation', isActive: true },
-];
-
-export const MOCK_SERVICE_PACKAGES: ServicePackage[] = [
-    { id: 1, code: 'PKG001', name: 'Premium Package', description: 'Complete service package', price: 2000, services: [1, 2], duration: '1 day', isActive: true },
-    { id: 2, code: 'PKG002', name: 'Basic Package', description: 'Basic service package', price: 1000, services: [2], duration: '4 hours', isActive: true },
-];
-
-export const MOCK_SERVICE_PROVIDERS: ServiceProvider[] = [
-    { id: 1, code: 'PRV001', name: 'Tech Solutions', logo: 'https://picsum.photos/seed/provider1/40/40', phone: '+966501111111', email: 'info@techsolutions.com', specialization: 'IT Services', rating: 4.5 },
-    { id: 2, code: 'PRV002', name: 'Maintenance Pro', logo: 'https://picsum.photos/seed/provider2/40/40', phone: '+966502222222', email: 'info@maintenancepro.com', specialization: 'Maintenance', rating: 4.8 },
-];
-
-// Products Mock Data
-export const MOCK_PRODUCTS: Product[] = [
-    { id: 1, code: 'PRD001', name: 'Product A', description: 'High quality product', price: 1500, cost: 1000, stock: 50, category: 'Electronics', sku: 'SKU-001', isActive: true },
-    { id: 2, code: 'PRD002', name: 'Product B', description: 'Premium product', price: 2500, cost: 1800, stock: 30, category: 'Electronics', sku: 'SKU-002', isActive: true },
-    { id: 3, code: 'PRD003', name: 'Product C', description: 'Standard product', price: 800, cost: 500, stock: 100, category: 'Accessories', sku: 'SKU-003', isActive: true },
-];
-
-export const MOCK_PRODUCT_CATEGORIES: ProductCategory[] = [
-    { id: 1, code: 'CAT001', name: 'Electronics', description: 'Electronic products' },
-    { id: 2, code: 'CAT002', name: 'Accessories', description: 'Product accessories' },
-    { id: 3, code: 'CAT003', name: 'Software', description: 'Software products' },
-];
-
-export const MOCK_SUPPLIERS: Supplier[] = [
-    { id: 1, code: 'SUP001', name: 'Global Supplies', logo: 'https://picsum.photos/seed/supplier1/40/40', phone: '+966503333333', email: 'info@globalsupplies.com', address: 'Riyadh, Saudi Arabia', contactPerson: 'Ahmed Ali', specialization: 'Electronics' },
-    { id: 2, code: 'SUP002', name: 'Tech Distributors', logo: 'https://picsum.photos/seed/supplier2/40/40', phone: '+966504444444', email: 'info@techdist.com', address: 'Jeddah, Saudi Arabia', contactPerson: 'Sarah Mohammed', specialization: 'IT Equipment' },
-];
-
-export const MOCK_TEAMS = [
-  { id: 1, name: 'Sales Team A' },
-  { id: 2, name: 'Sales Team B' },
-];
-
-export const MOCK_EMPLOYEE_REPORT_DATA = [
-    {
-        id: 1,
-        name: 'admin',
-        totalLeads: 100,
-        calledLeads: 80,
-        notCalledLeads: 20,
-        untouchedLeads: 15,
-        touchedLeads: 85,
-        following: 50,
-        meeting: 10,
-        doneMeeting: 5,
-        followAfterMeeting: 3,
-        rescheduleMeeting: 2,
-        cancellation: 5,
-        noAnswer: 10,
-        outOfService: 2,
-        notInterested: 8,
-        whatsappPending: 5,
-        hold: 2,
-        broker: 1,
-        resale: 0,
-        closedDeal: 4,
-        totalCalls: 150,
-        answeredCalls: 120,
-        notAnsweredCalls: 30,
-        delayedReminderLeads: 3,
-        totalDeals: 7,
-        reservationDeals: 2,
-        inProgressDeals: 1,
-        closedDeals: 4,
-        cancelDeals: 1,
-    }
-];
-
-export const MOCK_CONNECTED_ACCOUNTS = {
-    facebook: [
-        { id: 1, name: 'My Real Estate Page', status: 'Connected', link: 'https://facebook.com/realestate' },
-        { id: 2, name: 'Luxury Villas Dubai', status: 'Connected', link: 'https://facebook.com/villasdubai' },
-    ],
-    tiktok: [],
-    whatsapp: [],
-};
-
-// Settings Mock Data
-export const MOCK_CHANNELS: Channel[] = [
-    { id: 1, name: 'Website', type: 'Web', priority: 'High' },
-    { id: 2, name: 'Facebook', type: 'Social', priority: 'Medium' },
-    { id: 3, name: 'Google Ads', type: 'advertising', priority: 'High' },
-    { id: 4, name: 'Newsletter', type: 'email', priority: 'Medium' },
-];
-
-export const MOCK_STAGES: Stage[] = [
-    { id: 1, name: 'New Lead', description: 'Just arrived, untouched.', color: '#3b82f6', required: true, autoAdvance: false },
-    { id: 2, name: 'Qualified', description: 'Contacted and budget confirmed.', color: '#10b981', required: true, autoAdvance: true },
-    { id: 3, name: 'Proposal', description: 'Sent the official proposal.', color: '#8b5cf6', required: false, autoAdvance: false },
-];
-
-export const MOCK_STATUSES: Status[] = [
-    { id: 1, name: 'Active', description: 'Lead is currently active.', category: 'Active', color: '#22c55e', isDefault: true },
-    { id: 2, name: 'Follow Up', description: 'Requires a follow-up call.', category: 'Follow Up', color: '#3b82f6' },
-    { id: 3, name: 'No Answer', description: 'Could not reach the lead.', category: 'Inactive', color: '#f59e0b' },
-    { id: 4, name: 'Not Interested', description: 'Lead is not interested.', category: 'Closed', color: '#ef4444', isHidden: true },
-];
-
 
 export const translations = {
     en: {
@@ -258,10 +81,22 @@ export const translations = {
         todayUntouchedLeads: "Today Untouched Leads",
         delayedLeads: "Delayed Leads",
         weekLeadsReport: "Week Leads Report",
+        last7DaysPerformance: "Last 7 days performance",
         stagesReport: "Stages Report",
+        distributionByStage: "Distribution by stage",
         topUsers: "Top Users",
+        mostActivePerformers: "Most active performers",
         latestFeedbacks: "Latest Feedbacks",
+        recentActivityUpdates: "Recent activity updates",
         noDataAvailable: "No data available",
+        noStageDataAvailable: "No stage data available",
+        noUserActivityData: "No user activity data",
+        noRecentFeedbackAvailable: "No recent feedback available",
+        noNotes: "No notes",
+        totalLeads: "Total Leads",
+        totalDeals: "Total Deals",
+        activeTodos: "Active Todos",
+        completedDeals: "Completed Deals",
         // Leads
         filter: "Filter",
         addLead: "Add Lead",
@@ -368,6 +203,12 @@ export const translations = {
         salesCommissionPercentage: "Sales Commission Percentage",
         salesCommissionAmount: "Sales Commission Amount",
         description: "Description",
+        unknownClient: "Unknown Client",
+        eg1000000: "e.g. 1000000",
+        eg10: "e.g. 10",
+        calculated: "Calculated",
+        eg25: "e.g. 2.5",
+        enterNotesAboutDeal: "Enter any notes about the deal...",
         // Users
         autoAssignment: "Auto Assignment",
         on: "On",
@@ -378,6 +219,7 @@ export const translations = {
         deleteUser: "Delete User",
         salesAssistant: "Sales Assistant",
         owner: "Owner",
+        noPhoneNumber: "No phone number available",
         nameRequired: "Name is required",
         usernameRequired: "Username is required",
         emailRequired: "Email is required",
@@ -393,8 +235,11 @@ export const translations = {
         no: "No",
         noResultsFound: "No results found.",
         // Todos
+        addTodo: "Add Todo",
         thisWeek: "This Week",
         noTasksForDate: "No tasks for",
+        failedToCompleteTodo: "Failed to complete todo. Please try again.",
+        completed: "Completed",
         // Reports
         allTeams: "All Teams",
         selectFiltersPrompt: "Select filters to view the report.",
@@ -481,8 +326,27 @@ export const translations = {
         following: "Following",
         noAnswer: "No Answer",
         outOfService: "Out Of Service",
+        // Task Stages
+        hold: "Hold",
+        doneMeeting: "Done Meeting",
+        followAfterMeeting: "Follow After Meeting",
+        rescheduleMeeting: "Reschedule Meeting",
+        cancellation: "Cancellation",
+        notInterested: "Not Interested",
+        whatsappPending: "WhatsApp Pending",
+        broker: "Broker",
+        resale: "Resale",
+        // AddTodoModal
+        deal: "Deal",
+        selectDeal: "Select Deal",
+        reminderDateAndTime: "Reminder Date & Time",
+        enterNotes: "Enter notes...",
+        loading: "Loading...",
+        pleaseFillRequiredFields: "Please fill in required fields",
+        failedToCreateTodo: "Failed to create todo. Please try again.",
         writeActionDetails: "Write details of the action (e.g., call summary)",
         reminderDate: "Reminder Date",
+        stageUpdated: "Stage updated",
         // AssignLeadModal
         leadsCount: "Leads Count",
         selectEmployee: "Select Employee",
@@ -494,6 +358,7 @@ export const translations = {
         selectAssignedOrNot: "Select is assigned or not",
         unassigned: "Unassigned",
         selectUser: "Select user",
+        selectLead: "Select Lead",
         selectAuthority: "Select authority",
         leadInfo: "Lead Info",
         selectProject: "Select project",
@@ -504,7 +369,6 @@ export const translations = {
         cancelReasons: "Cancel Reasons",
         selectCancelReason: "Select cancel reason",
         budgetTooHigh: "Budget too high",
-        notInterested: "Not interested",
         currentStage: "Current Stage",
         selectStage: "Select stage",
         hasStages: "Has Stages",
@@ -515,7 +379,6 @@ export const translations = {
         budgetRangeStart: "Budget Range Start",
         eg500000: "e.g., 500000",
         budgetRangeEnd: "Budget Range End",
-        eg1000000: "e.g., 1000000",
         delay: "Delay",
         delayedReminderLeads: "Delayed Reminder Leads",
         selectDelayedOrNot: "Select delayed or not",
@@ -598,6 +461,7 @@ export const translations = {
         // DeleteUserModal
         confirmDeleteUser1: "Are you sure you want to delete the user",
         confirmDeleteUser2: "? This action cannot be undone.",
+        errorUpdatingUser: "Failed to update user. Please try again.",
         // AddCampaignModal
         addNewCampaign: "Add New Campaign",
         enterCampaignName: "Enter campaign name",
@@ -622,6 +486,14 @@ export const translations = {
         enterNewPassword: "Enter new password",
         confirmNewPassword: "Confirm New Password",
         enterConfirmNewPassword: "Enter new password again",
+        currentPasswordRequired: "Current password is required",
+        newPasswordRequired: "New password is required",
+        confirmPasswordRequired: "Confirm password is required",
+        passwordsDoNotMatch: "Passwords do not match",
+        newPasswordMustBeDifferent: "New password must be different from current password",
+        passwordChangedSuccessfully: "Password changed successfully!",
+        errorChangingPassword: "Error changing password",
+        changing: "Changing...",
         // Profile
         profile: "Profile",
         profileSettings: "Profile Settings",
@@ -633,6 +505,52 @@ export const translations = {
         upload: "Upload",
         security: "Security",
         saveProfile: "Save Profile",
+        // Delete modals
+        deleteChannel: "Delete Channel",
+        confirmDeleteChannel: "Are you sure you want to delete",
+        deleteStage: "Delete Stage",
+        confirmDeleteStage: "Are you sure you want to delete",
+        deleteStatus: "Delete Status",
+        confirmDeleteStatus: "Are you sure you want to delete",
+        cannotDeleteDefault: "Cannot delete default status",
+        // Registration
+        register: "Register",
+        dontHaveAccount: "Don't have an account?",
+        alreadyHaveAccount: "Already have an account?",
+        createAccount: "Create Your Account",
+        registerDescription: "Start managing your business with our powerful CRM system. Get started in minutes.",
+        createCompanyAccount: "Create your company account",
+        companyInformation: "Company Information",
+        companyName: "Company Name",
+        enterCompanyName: "Enter company name",
+        companyNameRequired: "Company name is required",
+        companyDomain: "Company Domain",
+        enterCompanyDomain: "e.g., example.com",
+        companyDomainRequired: "Company domain is required",
+        invalidDomain: "Invalid domain format",
+        domainHint: "This will be used as your company identifier",
+        realEstate: "Real Estate",
+        ownerInformation: "Owner Information",
+        firstName: "First Name",
+        enterFirstName: "Enter first name",
+        firstNameRequired: "First name is required",
+        lastName: "Last Name",
+        enterLastName: "Enter last name",
+        lastNameRequired: "Last name is required",
+        enterEmail: "Enter email address",
+        enterUsername: "Enter username",
+        usernameMinLength: "Username must be at least 3 characters",
+        enterPassword: "Enter password",
+        confirmPassword: "Confirm Password",
+        selectPlan: "Select a Plan",
+        planSelectionHint: "You can start with a free trial and choose a plan later",
+        freeTrial: "Free Trial",
+        trialDescription: "14 days free trial, no credit card required",
+        free: "Free",
+        plansWillBeAdded: "Plans will be available after registration",
+        back: "Back",
+        next: "Next",
+        registrationFailed: "Registration failed. Please try again.",
     },
     ar: {
         hello: "أهلاً بك في نظام ديل! 👋",
@@ -660,7 +578,7 @@ export const translations = {
         activities: "الأنشطة",
         inventory: "المخزون",
         properties: "العقارات",
-        owners: "الملاك",
+        owners: "المالك",
         deals: "الصفقات",
         users: "المستخدمون",
         marketing: "التسويق",
@@ -690,10 +608,22 @@ export const translations = {
         todayUntouchedLeads: "عملاء لم يتم التواصل معهم اليوم",
         delayedLeads: "عملاء متأخرون",
         weekLeadsReport: "تقرير العملاء الأسبوعي",
+        last7DaysPerformance: "أداء آخر 7 أيام",
         stagesReport: "تقرير المراحل",
+        distributionByStage: "التوزيع حسب المرحلة",
         topUsers: "أفضل المستخدمين",
+        mostActivePerformers: "الأكثر نشاطاً",
         latestFeedbacks: "آخر الملاحظات",
+        recentActivityUpdates: "تحديثات الأنشطة الأخيرة",
         noDataAvailable: "لا توجد بيانات متاحة",
+        noStageDataAvailable: "لا توجد بيانات مراحل متاحة",
+        noUserActivityData: "لا توجد بيانات نشاط المستخدمين",
+        noRecentFeedbackAvailable: "لا توجد ملاحظات حديثة متاحة",
+        noNotes: "لا توجد ملاحظات",
+        totalLeads: "إجمالي العملاء",
+        totalDeals: "إجمالي الصفقات",
+        activeTodos: "المهام النشطة",
+        completedDeals: "الصفقات المكتملة",
         // Leads
         filter: "تصفية",
         addLead: "إضافة عميل",
@@ -800,6 +730,12 @@ export const translations = {
         salesCommissionPercentage: "نسبة عمولة المبيعات",
         salesCommissionAmount: "مبلغ عمولة المبيعات",
         description: "الوصف",
+        unknownClient: "عميل غير معروف",
+        eg1000000: "مثال: 1000000",
+        eg10: "مثال: 10",
+        calculated: "محسوب تلقائياً",
+        eg25: "مثال: 2.5",
+        enterNotesAboutDeal: "أدخل أي ملاحظات حول الصفقة...",
         // Users
         autoAssignment: "الإسناد التلقائي",
         on: "مفعل",
@@ -810,6 +746,7 @@ export const translations = {
         deleteUser: "حذف المستخدم",
         salesAssistant: "مساعد مبيعات",
         owner: "المالك",
+        noPhoneNumber: "لا يوجد رقم هاتف متاح",
         nameRequired: "الاسم مطلوب",
         usernameRequired: "اسم المستخدم مطلوب",
         emailRequired: "البريد الإلكتروني مطلوب",
@@ -825,8 +762,11 @@ export const translations = {
         no: "لا",
         noResultsFound: "لم يتم العثور على نتائج.",
         // Todos
+        addTodo: "إضافة مهمة",
         thisWeek: "هذا الأسبوع",
         noTasksForDate: "لا توجد مهام بتاريخ",
+        failedToCompleteTodo: "فشل إكمال المهمة. يرجى المحاولة مرة أخرى.",
+        completed: "مكتمل",
         // Reports
         allTeams: "كل الفرق",
         selectFiltersPrompt: "اختر مرشحات لعرض التقرير.",
@@ -913,8 +853,27 @@ export const translations = {
         following: "متابعة",
         noAnswer: "لا يوجد رد",
         outOfService: "خارج الخدمة",
+        // Task Stages
+        hold: "انتظار",
+        doneMeeting: "تم الاجتماع",
+        followAfterMeeting: "متابعة بعد الاجتماع",
+        rescheduleMeeting: "إعادة جدولة الاجتماع",
+        cancellation: "إلغاء",
+        notInterested: "غير مهتم",
+        whatsappPending: "واتساب معلق",
+        broker: "وسيط",
+        resale: "إعادة بيع",
+        // AddTodoModal
+        deal: "الصفقة",
+        selectDeal: "اختر الصفقة",
+        reminderDateAndTime: "تاريخ ووقت التذكير",
+        enterNotes: "أدخل الملاحظات...",
+        loading: "جاري التحميل...",
+        pleaseFillRequiredFields: "الرجاء ملء الحقول المطلوبة",
+        failedToCreateTodo: "فشل إنشاء المهمة. يرجى المحاولة مرة أخرى.",
         writeActionDetails: "اكتب تفاصيل الإجراء (مثل ملخص المكالمة)",
         reminderDate: "تاريخ التذكير",
+        stageUpdated: "تم تحديث المرحلة",
         // AssignLeadModal
         leadsCount: "عدد العملاء",
         selectEmployee: "اختر موظف",
@@ -926,6 +885,7 @@ export const translations = {
         selectAssignedOrNot: "اختر مسند أم لا",
         unassigned: "غير مسند",
         selectUser: "اختر مستخدم",
+        selectLead: "اختر العميل",
         selectAuthority: "اختر الصلاحية",
         leadInfo: "معلومات العميل",
         selectProject: "اختر مشروع",
@@ -936,7 +896,6 @@ export const translations = {
         cancelReasons: "أسباب الإلغاء",
         selectCancelReason: "اختر سبب الإلغاء",
         budgetTooHigh: "الميزانية مرتفعة جدا",
-        notInterested: "غير مهتم",
         currentStage: "المرحلة الحالية",
         selectStage: "اختر مرحلة",
         hasStages: "لديه مراحل",
@@ -947,7 +906,6 @@ export const translations = {
         budgetRangeStart: "بداية نطاق الميزانية",
         eg500000: "مثال: 500000",
         budgetRangeEnd: "نهاية نطاق الميزانية",
-        eg1000000: "مثال: 1000000",
         delay: "تأخير",
         delayedReminderLeads: "عملاء بتذكير متأخر",
         selectDelayedOrNot: "اختر متأخر أم لا",
@@ -1030,6 +988,7 @@ export const translations = {
         // DeleteUserModal
         confirmDeleteUser1: "هل أنت متأكد أنك تريد حذف المستخدم",
         confirmDeleteUser2: "؟ لا يمكن التراجع عن هذا الإجراء.",
+        errorUpdatingUser: "فشل تحديث المستخدم. يرجى المحاولة مرة أخرى.",
         // AddCampaignModal
         addNewCampaign: "إضافة حملة جديدة",
         enterCampaignName: "أدخل اسم الحملة",
@@ -1054,6 +1013,14 @@ export const translations = {
         enterNewPassword: "أدخل كلمة المرور الجديدة",
         confirmNewPassword: "تأكيد كلمة المرور الجديدة",
         enterConfirmNewPassword: "أدخل كلمة المرور الجديدة مرة أخرى",
+        currentPasswordRequired: "كلمة المرور الحالية مطلوبة",
+        newPasswordRequired: "كلمة المرور الجديدة مطلوبة",
+        confirmPasswordRequired: "تأكيد كلمة المرور مطلوب",
+        passwordsDoNotMatch: "كلمات المرور غير متطابقة",
+        newPasswordMustBeDifferent: "يجب أن تكون كلمة المرور الجديدة مختلفة عن الحالية",
+        passwordChangedSuccessfully: "تم تغيير كلمة المرور بنجاح!",
+        errorChangingPassword: "خطأ في تغيير كلمة المرور",
+        changing: "جاري التغيير...",
         // Profile
         profile: "الملف الشخصي",
         profileSettings: "إعدادات الملف الشخصي",
@@ -1065,5 +1032,51 @@ export const translations = {
         upload: "رفع",
         security: "الأمان",
         saveProfile: "حفظ الملف الشخصي",
+        // Delete modals
+        deleteChannel: "حذف القناة",
+        confirmDeleteChannel: "هل أنت متأكد أنك تريد حذف",
+        deleteStage: "حذف المرحلة",
+        confirmDeleteStage: "هل أنت متأكد أنك تريد حذف",
+        deleteStatus: "حذف الحالة",
+        confirmDeleteStatus: "هل أنت متأكد أنك تريد حذف",
+        cannotDeleteDefault: "لا يمكن حذف الحالة الافتراضية",
+        // Registration
+        register: "التسجيل",
+        dontHaveAccount: "ليس لديك حساب؟",
+        alreadyHaveAccount: "هل لديك حساب بالفعل؟",
+        createAccount: "إنشاء حسابك",
+        registerDescription: "ابدأ إدارة عملك مع نظام CRM القوي لدينا. ابدأ في دقائق.",
+        createCompanyAccount: "إنشاء حساب شركتك",
+        companyInformation: "معلومات الشركة",
+        companyName: "اسم الشركة",
+        enterCompanyName: "أدخل اسم الشركة",
+        companyNameRequired: "اسم الشركة مطلوب",
+        companyDomain: "نطاق الشركة",
+        enterCompanyDomain: "مثال: example.com",
+        companyDomainRequired: "نطاق الشركة مطلوب",
+        invalidDomain: "صيغة النطاق غير صحيحة",
+        domainHint: "سيتم استخدامه كمعرف للشركة",
+        realEstate: "العقارات",
+        ownerInformation: "معلومات المالك",
+        firstName: "الاسم الأول",
+        enterFirstName: "أدخل الاسم الأول",
+        firstNameRequired: "الاسم الأول مطلوب",
+        lastName: "اسم العائلة",
+        enterLastName: "أدخل اسم العائلة",
+        lastNameRequired: "اسم العائلة مطلوب",
+        enterEmail: "أدخل عنوان البريد الإلكتروني",
+        enterUsername: "أدخل اسم المستخدم",
+        usernameMinLength: "يجب أن يكون اسم المستخدم 3 أحرف على الأقل",
+        enterPassword: "أدخل كلمة المرور",
+        confirmPassword: "تأكيد كلمة المرور",
+        selectPlan: "اختر خطة",
+        planSelectionHint: "يمكنك البدء بفترة تجريبية مجانية واختيار خطة لاحقاً",
+        freeTrial: "فترة تجريبية مجانية",
+        trialDescription: "14 يوم تجريبي مجاني، لا حاجة لبطاقة ائتمان",
+        free: "مجاني",
+        plansWillBeAdded: "ستكون الخطط متاحة بعد التسجيل",
+        back: "رجوع",
+        next: "التالي",
+        registrationFailed: "فشل التسجيل. يرجى المحاولة مرة أخرى.",
     }
 };

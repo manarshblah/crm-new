@@ -73,14 +73,32 @@ export const ManageIntegrationAccountModal = () => {
         setEditingAccount(null); // Clear editing state on close
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const payload = {
+            platform: platformName.toLowerCase() === 'meta' ? 'meta' : platformName.toLowerCase(),
             name: accountName,
             link: accountLink,
             phone: phoneNumber,
             status,
         };
 
+        // TODO: استبدل هذا الكود باستدعاء API
+        // مثال:
+        // try {
+        //   if (isEditMode) {
+        //     await updateConnectedAccountAPI(editingAccount.id, payload);
+        //     // ثم حدث state
+        //   } else {
+        //     const newAccount = await createConnectedAccountAPI(payload);
+        //     // ثم أضف للstate
+        //   }
+        //   handleClose();
+        // } catch (error) {
+        //   console.error('Error saving account:', error);
+        //   // TODO: أظهر رسالة خطأ للمستخدم
+        // }
+
+        // الكود الحالي (للاختبار فقط):
         if (isEditMode) {
             // Edit existing account
             setConnectedAccounts((prev: any) => ({

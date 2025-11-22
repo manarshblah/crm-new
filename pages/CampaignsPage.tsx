@@ -58,7 +58,20 @@ const CampaignsTable = ({ campaigns, onDelete }: { campaigns: Campaign[], onDele
 
 
 export const CampaignsPage = () => {
-    const { t, setIsAddCampaignModalOpen, campaigns, deleteCampaign } = useAppContext();
+    // TODO: أضف useEffect لتحميل Campaigns من API عند فتح الصفحة
+    // مثال:
+    // useEffect(() => {
+    //   const loadCampaigns = async () => {
+    //     try {
+    //       const campaignsData = await getCampaignsAPI();
+    //       // TODO: استخدم setCampaigns من AppContext
+    //     } catch (error) {
+    //       console.error('Error loading campaigns:', error);
+    //     }
+    //   };
+    //   loadCampaigns();
+    // }, []);
+    const { t, setIsAddCampaignModalOpen, campaigns, deleteCampaign, setConfirmDeleteConfig, setIsConfirmDeleteModalOpen } = useAppContext();
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
 
@@ -75,8 +88,17 @@ export const CampaignsPage = () => {
     }, [searchTerm, campaigns]);
     
     const handleDelete = (id: number) => {
-        if(window.confirm(t('confirmDelete'))) {
-            deleteCampaign(id);
+        const campaign = campaigns.find(c => c.id === id);
+        if (campaign) {
+            setConfirmDeleteConfig({
+                title: t('deleteCampaign') || 'Delete Campaign',
+                message: t('confirmDeleteCampaign') || 'Are you sure you want to delete',
+                itemName: campaign.name,
+                onConfirm: async () => {
+                    await deleteCampaign(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     }
 

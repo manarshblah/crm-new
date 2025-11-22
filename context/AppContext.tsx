@@ -1,8 +1,30 @@
 
 
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { Theme, Language, Page, Lead, User, Deal, Campaign, Developer, Project, Unit, Owner, Service, ServicePackage, ServiceProvider, Product, ProductCategory, Supplier } from '../types';
-import { translations, MOCK_USERS, MOCK_CONNECTED_ACCOUNTS, MOCK_LEADS, MOCK_DEALS, MOCK_CAMPAIGNS, MOCK_DEVELOPERS, MOCK_PROJECTS, MOCK_UNITS, MOCK_OWNERS, MOCK_SERVICES, MOCK_SERVICE_PACKAGES, MOCK_SERVICE_PROVIDERS, MOCK_PRODUCTS, MOCK_PRODUCT_CATEGORIES, MOCK_SUPPLIERS } from '../constants';
+import { Theme, Language, Page, Lead, User, Deal, Campaign, Developer, Project, Unit, Owner, Service, ServicePackage, ServiceProvider, Product, ProductCategory, Supplier, Activity, Todo, ClientTask, TimelineEntry, TaskStage, Channel, Stage, Status } from '../types';
+import { translations } from '../constants';
+import { formatStageName, getStageDisplayLabel, getStageCategory } from '../utils/taskStageMapper';
+import { formatDateToLocal, parseUTCDate } from '../utils/dateUtils';
+import { generateColorShades } from '../utils/colors';
+import { 
+  getCurrentUserAPI, getUsersAPI, getLeadsAPI, getDealsAPI, createUserAPI, updateUserAPI, deleteUserAPI, createLeadAPI, updateLeadAPI, createDealAPI, deleteDealAPI,
+  getDevelopersAPI, createDeveloperAPI, updateDeveloperAPI, deleteDeveloperAPI,
+  getProjectsAPI, createProjectAPI, updateProjectAPI, deleteProjectAPI,
+  getUnitsAPI, createUnitAPI, updateUnitAPI, deleteUnitAPI,
+  getOwnersAPI, createOwnerAPI, updateOwnerAPI, deleteOwnerAPI,
+  getServicesAPI, createServiceAPI, updateServiceAPI, deleteServiceAPI,
+  getServicePackagesAPI, createServicePackageAPI, updateServicePackageAPI, deleteServicePackageAPI,
+  getServiceProvidersAPI, createServiceProviderAPI, updateServiceProviderAPI, deleteServiceProviderAPI,
+  getProductsAPI, createProductAPI, updateProductAPI, deleteProductAPI,
+  getProductCategoriesAPI, createProductCategoryAPI, updateProductCategoryAPI, deleteProductCategoryAPI,
+  getSuppliersAPI, createSupplierAPI, updateSupplierAPI, deleteSupplierAPI,
+  getCampaignsAPI, createCampaignAPI, deleteCampaignAPI,
+  getTasksAPI, createTaskAPI, updateTaskAPI,
+  getClientTasksAPI, createClientTaskAPI, updateClientTaskAPI, deleteClientTaskAPI,
+  getChannelsAPI, createChannelAPI, updateChannelAPI, deleteChannelAPI,
+  getStagesAPI, createStageAPI, updateStageAPI, deleteStageAPI,
+  getStatusesAPI, createStatusAPI, updateStatusAPI, deleteStatusAPI
+} from '../services/api';
 
 // --- Helper Functions ---
 const hexToHsl = (hex: string): [number, number, number] | null => {
@@ -49,6 +71,8 @@ export interface AppContextType {
   t: (key: keyof typeof translations.en) => string;
   selectedLead: Lead | null;
   setSelectedLead: (lead: Lead | null) => void;
+  selectedLeadForDeal: number | null;
+  setSelectedLeadForDeal: (leadId: number | null) => void;
   selectedUser: User | null;
   setSelectedUser: (user: User | null) => void;
   currentUser: User | null;
@@ -57,8 +81,14 @@ export interface AppContextType {
   setIsSidebarOpen: (isOpen: boolean) => void;
   isAddLeadModalOpen: boolean;
   setIsAddLeadModalOpen: (isOpen: boolean) => void;
+  isEditLeadModalOpen: boolean;
+  setIsEditLeadModalOpen: (isOpen: boolean) => void;
+  editingLead: Lead | null;
+  setEditingLead: React.Dispatch<React.SetStateAction<Lead | null>>;
   isAddActionModalOpen: boolean;
   setIsAddActionModalOpen: (isOpen: boolean) => void;
+  isAddTodoModalOpen: boolean;
+  setIsAddTodoModalOpen: (isOpen: boolean) => void;
   isAssignLeadModalOpen: boolean;
   setIsAssignLeadModalOpen: (isOpen: boolean) => void;
   isFilterDrawerOpen: boolean;
@@ -91,10 +121,71 @@ export interface AppContextType {
   setIsEditDeveloperModalOpen: (isOpen: boolean) => void;
   editingDeveloper: Developer | null;
   setEditingDeveloper: React.Dispatch<React.SetStateAction<Developer | null>>;
+  isDeleteDeveloperModalOpen: boolean;
+  setIsDeleteDeveloperModalOpen: (isOpen: boolean) => void;
+  deletingDeveloper: Developer | null;
+  setDeletingDeveloper: React.Dispatch<React.SetStateAction<Developer | null>>;
+  // General confirm delete modal
+  isConfirmDeleteModalOpen: boolean;
+  setIsConfirmDeleteModalOpen: (isOpen: boolean) => void;
+  confirmDeleteConfig: {
+    title: string;
+    message: string;
+    itemName?: string;
+    onConfirm: () => void | Promise<void>;
+  } | null;
+  setConfirmDeleteConfig: React.Dispatch<React.SetStateAction<{
+    title: string;
+    message: string;
+    itemName?: string;
+    onConfirm: () => void | Promise<void>;
+  } | null>>;
   isEditProjectModalOpen: boolean;
   setIsEditProjectModalOpen: (isOpen: boolean) => void;
   editingProject: Project | null;
   setEditingProject: React.Dispatch<React.SetStateAction<Project | null>>;
+  isEditUnitModalOpen: boolean;
+  setIsEditUnitModalOpen: (isOpen: boolean) => void;
+  editingUnit: Unit | null;
+  setEditingUnit: React.Dispatch<React.SetStateAction<Unit | null>>;
+  // Services modals
+  isAddServiceModalOpen: boolean;
+  setIsAddServiceModalOpen: (isOpen: boolean) => void;
+  isEditServiceModalOpen: boolean;
+  setIsEditServiceModalOpen: (isOpen: boolean) => void;
+  editingService: Service | null;
+  setEditingService: React.Dispatch<React.SetStateAction<Service | null>>;
+  isAddServicePackageModalOpen: boolean;
+  setIsAddServicePackageModalOpen: (isOpen: boolean) => void;
+  isEditServicePackageModalOpen: boolean;
+  setIsEditServicePackageModalOpen: (isOpen: boolean) => void;
+  editingServicePackage: ServicePackage | null;
+  setEditingServicePackage: React.Dispatch<React.SetStateAction<ServicePackage | null>>;
+  isAddServiceProviderModalOpen: boolean;
+  setIsAddServiceProviderModalOpen: (isOpen: boolean) => void;
+  isEditServiceProviderModalOpen: boolean;
+  setIsEditServiceProviderModalOpen: (isOpen: boolean) => void;
+  editingServiceProvider: ServiceProvider | null;
+  setEditingServiceProvider: React.Dispatch<React.SetStateAction<ServiceProvider | null>>;
+  // Products modals
+  isAddProductModalOpen: boolean;
+  setIsAddProductModalOpen: (isOpen: boolean) => void;
+  isEditProductModalOpen: boolean;
+  setIsEditProductModalOpen: (isOpen: boolean) => void;
+  editingProduct: Product | null;
+  setEditingProduct: React.Dispatch<React.SetStateAction<Product | null>>;
+  isAddProductCategoryModalOpen: boolean;
+  setIsAddProductCategoryModalOpen: (isOpen: boolean) => void;
+  isEditProductCategoryModalOpen: boolean;
+  setIsEditProductCategoryModalOpen: (isOpen: boolean) => void;
+  editingProductCategory: ProductCategory | null;
+  setEditingProductCategory: React.Dispatch<React.SetStateAction<ProductCategory | null>>;
+  isAddSupplierModalOpen: boolean;
+  setIsAddSupplierModalOpen: (isOpen: boolean) => void;
+  isEditSupplierModalOpen: boolean;
+  setIsEditSupplierModalOpen: (isOpen: boolean) => void;
+  editingSupplier: Supplier | null;
+  setEditingSupplier: React.Dispatch<React.SetStateAction<Supplier | null>>;
 
 
   // Deals states
@@ -104,6 +195,8 @@ export interface AppContextType {
   // Users states
   isAddUserModalOpen: boolean;
   setIsAddUserModalOpen: (isOpen: boolean) => void;
+  isViewUserModalOpen: boolean;
+  setIsViewUserModalOpen: (isOpen: boolean) => void;
   isEditUserModalOpen: boolean;
   setIsEditUserModalOpen: (isOpen: boolean) => void;
   isDeleteUserModalOpen: boolean;
@@ -116,8 +209,8 @@ export interface AppContextType {
   // Integrations states
   isManageIntegrationAccountModalOpen: boolean;
   setIsManageIntegrationAccountModalOpen: (isOpen: boolean) => void;
-  connectedAccounts: typeof MOCK_CONNECTED_ACCOUNTS;
-  setConnectedAccounts: React.Dispatch<React.SetStateAction<typeof MOCK_CONNECTED_ACCOUNTS>>;
+  connectedAccounts: { facebook: ConnectedAccount[]; tiktok: ConnectedAccount[]; whatsapp: ConnectedAccount[] };
+  setConnectedAccounts: React.Dispatch<React.SetStateAction<{ facebook: ConnectedAccount[]; tiktok: ConnectedAccount[]; whatsapp: ConnectedAccount[] }>>;
   editingAccount: ConnectedAccount | null;
   setEditingAccount: React.Dispatch<React.SetStateAction<ConnectedAccount | null>>;
   
@@ -127,56 +220,106 @@ export interface AppContextType {
 
   // Data states
   users: User[];
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>; // TODO: استخدم هذا لتحديث users من API
   addUser: (user: Omit<User, 'id' | 'avatar'>) => void;
+  updateUser: (userId: number, userData: Partial<User>) => Promise<void>;
   deleteUser: (userId: number) => void;
   leads: Lead[];
+  setLeads: React.Dispatch<React.SetStateAction<Lead[]>>; // TODO: استخدم هذا لتحديث leads من API
   addLead: (lead: Omit<Lead, 'id' | 'createdAt' | 'history' | 'lastFeedback' | 'notes' | 'lastStage' | 'reminder'>) => void;
+  updateLead: (leadId: number, leadData: Partial<Lead>) => void;
+  assignLeads: (leadIds: number[], userId: number) => void;
   deals: Deal[];
+  setDeals: React.Dispatch<React.SetStateAction<Deal[]>>; // TODO: استخدم هذا لتحديث deals من API
   addDeal: (deal: Omit<Deal, 'id'>) => void;
   deleteDeal: (dealId: number) => void;
   campaigns: Campaign[];
-  addCampaign: (campaign: Omit<Campaign, 'id'>) => void;
+  setCampaigns: React.Dispatch<React.SetStateAction<Campaign[]>>;
+  addCampaign: (campaign: Omit<Campaign, 'id' | 'code' | 'createdAt'>) => void;
   deleteCampaign: (campaignId: number) => void;
+  activities: Activity[];
+  setActivities: React.Dispatch<React.SetStateAction<Activity[]>>;
+  addActivity: (activity: Omit<Activity, 'id'>) => void;
+  todos: Todo[];
+  setTodos: React.Dispatch<React.SetStateAction<Todo[]>>;
+  completedTodos: Todo[];
+  setCompletedTodos: React.Dispatch<React.SetStateAction<Todo[]>>;
+  addTodo: (todoData: { dealId: number; stage: TaskStage; notes: string; reminderDate: string }) => Promise<void>;
+  completeTodo: (todoId: number) => Promise<void>;
   developers: Developer[];
+  setDevelopers: React.Dispatch<React.SetStateAction<Developer[]>>; // TODO: استخدم هذا لتحديث developers من API
   addDeveloper: (developer: Omit<Developer, 'id' | 'code'>) => void;
   updateDeveloper: (developer: Developer) => void;
   deleteDeveloper: (developerId: number) => void;
   projects: Project[];
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>; // TODO: استخدم هذا لتحديث projects من API
   addProject: (project: Omit<Project, 'id' | 'code'>) => void;
   updateProject: (project: Project) => void;
   deleteProject: (projectId: number) => void;
   units: Unit[];
+  setUnits: React.Dispatch<React.SetStateAction<Unit[]>>; // TODO: استخدم هذا لتحديث units من API
   addUnit: (unit: Omit<Unit, 'id' | 'code' | 'isSold'>) => void;
+  updateUnit: (unit: Unit) => void;
+  deleteUnit: (unitId: number) => void;
   owners: Owner[];
+  setOwners: React.Dispatch<React.SetStateAction<Owner[]>>; // TODO: استخدم هذا لتحديث owners من API
   addOwner: (owner: Omit<Owner, 'id' | 'code'>) => void;
   updateOwner: (owner: Owner) => void;
   deleteOwner: (ownerId: number) => void;
   // Services data
   services: Service[];
+  setServices: React.Dispatch<React.SetStateAction<Service[]>>; // TODO: استخدم هذا لتحديث services من API
   addService: (service: Omit<Service, 'id' | 'code'>) => void;
   updateService: (service: Service) => void;
   deleteService: (serviceId: number) => void;
   servicePackages: ServicePackage[];
+  setServicePackages: React.Dispatch<React.SetStateAction<ServicePackage[]>>; // TODO: استخدم هذا لتحديث servicePackages من API
   addServicePackage: (servicePackage: Omit<ServicePackage, 'id' | 'code'>) => void;
   updateServicePackage: (servicePackage: ServicePackage) => void;
   deleteServicePackage: (packageId: number) => void;
   serviceProviders: ServiceProvider[];
+  setServiceProviders: React.Dispatch<React.SetStateAction<ServiceProvider[]>>; // TODO: استخدم هذا لتحديث serviceProviders من API
   addServiceProvider: (provider: Omit<ServiceProvider, 'id' | 'code'>) => void;
   updateServiceProvider: (provider: ServiceProvider) => void;
   deleteServiceProvider: (providerId: number) => void;
   // Products data
   products: Product[];
+  setProducts: React.Dispatch<React.SetStateAction<Product[]>>; // TODO: استخدم هذا لتحديث products من API
   addProduct: (product: Omit<Product, 'id' | 'code'>) => void;
   updateProduct: (product: Product) => void;
   deleteProduct: (productId: number) => void;
   productCategories: ProductCategory[];
+  setProductCategories: React.Dispatch<React.SetStateAction<ProductCategory[]>>; // TODO: استخدم هذا لتحديث productCategories من API
   addProductCategory: (category: Omit<ProductCategory, 'id' | 'code'>) => void;
   updateProductCategory: (category: ProductCategory) => void;
   deleteProductCategory: (categoryId: number) => void;
   suppliers: Supplier[];
+  setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>; // TODO: استخدم هذا لتحديث suppliers من API
   addSupplier: (supplier: Omit<Supplier, 'id' | 'code'>) => void;
   updateSupplier: (supplier: Supplier) => void;
   deleteSupplier: (supplierId: number) => void;
+  // Client Tasks (Actions) data
+  clientTasks: ClientTask[];
+  setClientTasks: React.Dispatch<React.SetStateAction<ClientTask[]>>;
+  addClientTask: (clientTaskData: { clientId: number; stage: string; notes: string; reminderDate: string | null }) => Promise<void>;
+  updateClientTask: (clientTaskId: number, clientTaskData: Partial<ClientTask>) => Promise<void>;
+  deleteClientTask: (clientTaskId: number) => Promise<void>;
+  // Settings data
+  channels: Channel[];
+  setChannels: React.Dispatch<React.SetStateAction<Channel[]>>;
+  addChannel: (channel: Omit<Channel, 'id'>) => Promise<void>;
+  updateChannel: (channel: Channel) => Promise<void>;
+  deleteChannel: (channelId: number) => Promise<void>;
+  stages: Stage[];
+  setStages: React.Dispatch<React.SetStateAction<Stage[]>>;
+  addStage: (stage: Omit<Stage, 'id'>) => Promise<void>;
+  updateStage: (stage: Stage) => Promise<void>;
+  deleteStage: (stageId: number) => Promise<void>;
+  statuses: Status[];
+  setStatuses: React.Dispatch<React.SetStateAction<Status[]>>;
+  addStatus: (status: Omit<Status, 'id'>) => Promise<void>;
+  updateStatus: (status: Status) => Promise<void>;
+  deleteStatus: (statusId: number) => Promise<void>;
 }
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -190,54 +333,98 @@ export const useAppContext = () => {
 // FIX: Made children optional to fix missing children prop error.
 type AppProviderProps = { children?: ReactNode };
 export const AppProvider = ({ children }: AppProviderProps) => {
-  const [theme, setThemeState] = useState<Theme>('light');
-  const [language, setLanguage] = useState<Language>('en');
+  // Initialize theme from localStorage or default to 'light'
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'dark' || stored === 'light') {
+        // Apply theme immediately to prevent flash
+        document.documentElement.classList.toggle('dark', stored === 'dark');
+        return stored as Theme;
+      }
+    }
+    return 'light';
+  });
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('language');
+      if (stored === 'en' || stored === 'ar') {
+        return stored as Language;
+      }
+    }
+    return 'en';
+  });
   const [isLoggedIn, setIsLoggedInState] = useState(() => {
     const stored = localStorage.getItem('isLoggedIn');
     return stored === 'true';
   });
+  const [dataLoaded, setDataLoaded] = useState(false); // لتتبع ما إذا تم تحميل البيانات بالفعل
   const [currentPage, setCurrentPage] = useState<Page>('Dashboard');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedLeadForDeal, setSelectedLeadForDeal] = useState<number | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [currentUser, setCurrentUserState] = useState<User | null>(() => {
+    // محاولة تحميل المستخدم من localStorage
     const stored = localStorage.getItem('currentUser');
     if (stored) {
       try {
-        const user = JSON.parse(stored);
-        // Find the user in the users array to get the latest data
-        return MOCK_USERS.find(u => u.id === user.id) || user;
+        return JSON.parse(stored);
       } catch {
-        return MOCK_USERS[0];
+        return null;
       }
     }
-    return MOCK_USERS[0];
+    return null;
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [primaryColor, setPrimaryColor] = useState('#3b82f6'); // Default blue
-  const [activeSubPageColor, setActiveSubPageColorState] = useState('#91beee'); // User requested color
+  // Always use fixed purple color - never load from localStorage
+  const [primaryColor] = useState(() => {
+    // Remove any old color from localStorage to ensure consistency
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('primaryColor');
+    }
+    return '#9333ea'; // Purple (fixed, not customizable)
+  });
+  const [activeSubPageColor] = useState(() => {
+    // Remove any old color from localStorage to ensure consistency
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('activeSubPageColor');
+    }
+    return '#9333ea'; // Purple (same as primary color, fixed, not customizable)
+  });
   const [siteLogo, setSiteLogo] = useState<string | null>(null);
   
-  // Data states
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
-  const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
-  const [deals, setDeals] = useState<Deal[]>(MOCK_DEALS);
-  const [campaigns, setCampaigns] = useState<Campaign[]>(MOCK_CAMPAIGNS);
-  const [developers, setDevelopers] = useState<Developer[]>(MOCK_DEVELOPERS);
-  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
-  const [units, setUnits] = useState<Unit[]>(MOCK_UNITS);
-  const [owners, setOwners] = useState<Owner[]>(MOCK_OWNERS);
+  // Data states - TODO: سيتم تحميل البيانات من API بدلاً من البيانات الثابتة
+  const [users, setUsers] = useState<User[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [completedTodos, setCompletedTodos] = useState<Todo[]>([]);
+  const [developers, setDevelopers] = useState<Developer[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [owners, setOwners] = useState<Owner[]>([]);
   // Services data
-  const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
-  const [servicePackages, setServicePackages] = useState<ServicePackage[]>(MOCK_SERVICE_PACKAGES);
-  const [serviceProviders, setServiceProviders] = useState<ServiceProvider[]>(MOCK_SERVICE_PROVIDERS);
+  const [services, setServices] = useState<Service[]>([]);
+  const [servicePackages, setServicePackages] = useState<ServicePackage[]>([]);
+  const [serviceProviders, setServiceProviders] = useState<ServiceProvider[]>([]);
   // Products data
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
-  const [productCategories, setProductCategories] = useState<ProductCategory[]>(MOCK_PRODUCT_CATEGORIES);
-  const [suppliers, setSuppliers] = useState<Supplier[]>(MOCK_SUPPLIERS);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productCategories, setProductCategories] = useState<ProductCategory[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [clientTasks, setClientTasks] = useState<ClientTask[]>([]);
+  // Settings data
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [statuses, setStatuses] = useState<Status[]>([]);
   
   // Modals and drawers state
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
+  const [isEditLeadModalOpen, setIsEditLeadModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [isAddActionModalOpen, setIsAddActionModalOpen] = useState(false);
+  const [isAddTodoModalOpen, setIsAddTodoModalOpen] = useState(false);
   const [isAssignLeadModalOpen, setIsAssignLeadModalOpen] = useState(false);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [checkedLeadIds, setCheckedLeadIds] = useState<Set<number>>(new Set());
@@ -250,16 +437,49 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [isAddOwnerModalOpen, setIsAddOwnerModalOpen] = useState(false);
   const [isEditOwnerModalOpen, setIsEditOwnerModalOpen] = useState(false);
   const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
+  // Services modals
+  const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
+  const [isEditServiceModalOpen, setIsEditServiceModalOpen] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [isAddServicePackageModalOpen, setIsAddServicePackageModalOpen] = useState(false);
+  const [isEditServicePackageModalOpen, setIsEditServicePackageModalOpen] = useState(false);
+  const [editingServicePackage, setEditingServicePackage] = useState<ServicePackage | null>(null);
+  const [isAddServiceProviderModalOpen, setIsAddServiceProviderModalOpen] = useState(false);
+  const [isEditServiceProviderModalOpen, setIsEditServiceProviderModalOpen] = useState(false);
+  const [editingServiceProvider, setEditingServiceProvider] = useState<ServiceProvider | null>(null);
+  // Products modals
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [isEditProductModalOpen, setIsEditProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isAddProductCategoryModalOpen, setIsAddProductCategoryModalOpen] = useState(false);
+  const [isEditProductCategoryModalOpen, setIsEditProductCategoryModalOpen] = useState(false);
+  const [editingProductCategory, setEditingProductCategory] = useState<ProductCategory | null>(null);
+  const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
+  const [isEditSupplierModalOpen, setIsEditSupplierModalOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [isEditDeveloperModalOpen, setIsEditDeveloperModalOpen] = useState(false);
   const [editingDeveloper, setEditingDeveloper] = useState<Developer | null>(null);
+  const [isDeleteDeveloperModalOpen, setIsDeleteDeveloperModalOpen] = useState(false);
+  const [deletingDeveloper, setDeletingDeveloper] = useState<Developer | null>(null);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [isEditUnitModalOpen, setIsEditUnitModalOpen] = useState(false);
+  const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+  // General confirm delete modal
+  const [isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen] = useState(false);
+  const [confirmDeleteConfig, setConfirmDeleteConfig] = useState<{
+    title: string;
+    message: string;
+    itemName?: string;
+    onConfirm: () => void | Promise<void>;
+  } | null>(null);
   
   // Deals state
   const [isDealsFilterDrawerOpen, setIsDealsFilterDrawerOpen] = useState(false);
   
   // Users state
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isViewUserModalOpen, setIsViewUserModalOpen] = useState(false);
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
   const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
   
@@ -268,7 +488,13 @@ export const AppProvider = ({ children }: AppProviderProps) => {
 
   // Integrations state
   const [isManageIntegrationAccountModalOpen, setIsManageIntegrationAccountModalOpen] = useState(false);
-  const [connectedAccounts, setConnectedAccounts] = useState(MOCK_CONNECTED_ACCOUNTS);
+  // TODO: استدعي getConnectedAccountsAPI() عند تحميل صفحة Integrations
+  // مثال: getConnectedAccountsAPI('meta').then(data => setConnectedAccounts(prev => ({ ...prev, facebook: data })));
+  const [connectedAccounts, setConnectedAccounts] = useState<{ facebook: ConnectedAccount[]; tiktok: ConnectedAccount[]; whatsapp: ConnectedAccount[] }>({
+    facebook: [],
+    tiktok: [],
+    whatsapp: []
+  });
   const [editingAccount, setEditingAccount] = useState<ConnectedAccount | null>(null);
   
   // Change Password Modal state
@@ -282,25 +508,450 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     if (storedLang) setLanguage(storedLang);
     const storedColor = localStorage.getItem('primaryColor');
     if (storedColor) setPrimaryColor(storedColor);
-    const storedSubPageColor = localStorage.getItem('activeSubPageColor');
-    if (storedSubPageColor) setActiveSubPageColorState(storedSubPageColor);
+    // activeSubPageColor is now fixed to purple - no longer loads from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('activeSubPageColor');
+    }
     const storedLogo = localStorage.getItem('siteLogo');
     if (storedLogo) setSiteLogo(storedLogo);
 
-    // Load current user from localStorage if logged in
-    if (isLoggedIn) {
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        try {
-          const userData = JSON.parse(storedUser);
-          const user = users.find(u => u.id === userData.id) || MOCK_USERS.find(u => u.id === userData.id);
-          if (user) {
-            setCurrentUserState(user);
-          }
-        } catch {
-          // If error, keep default user
-        }
+    // تحميل البيانات من API عند تسجيل الدخول (مرة واحدة فقط)
+    if (isLoggedIn && localStorage.getItem('accessToken') && !dataLoaded) {
+      setDataLoaded(true); // ضع علامة أننا بدأنا التحميل
+      
+      // تحميل بيانات المستخدم الحالي
+      getCurrentUserAPI()
+        .then((userData) => {
+          // تحويل بيانات المستخدم من API إلى تنسيق Frontend
+          const frontendUser: User = {
+            id: userData.id,
+            name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.username,
+            username: userData.username,
+            email: userData.email,
+            role: userData.role === 'admin' ? 'Owner' : userData.role === 'employee' ? 'Sales Agent' : userData.role,
+            phone: '',
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.username)}&background=random`,
+            company: userData.company ? {
+              id: userData.company,
+              name: userData.company_name || 'Unknown Company',
+              specialization: (userData.company_specialization || 'real_estate') as 'real_estate' | 'services' | 'products',
+            } : undefined,
+          };
+          setCurrentUserState(frontendUser);
+          localStorage.setItem('currentUser', JSON.stringify(frontendUser));
+        })
+        .catch(() => {
+          // إذا فشل تحميل المستخدم، أعد إلى صفحة تسجيل الدخول
+          setIsLoggedInState(false);
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('currentUser');
+        });
+
+      // تحميل البيانات من API
+      // TODO: أضف loading states و error handling
+      // تحميل Users, Leads, Deals معاً في Promise.all (يتم استخدامها لاحقاً في Tasks)
+
+      // تحميل Real Estate data (فقط لشركات العقارات)
+      if (currentUser?.company?.specialization === 'real_estate') {
+        getDevelopersAPI()
+          .then((response) => {
+            const frontendDevelopers: Developer[] = response.results.map((d: any) => ({
+              id: d.id,
+              code: d.code,
+              name: d.name,
+            }));
+            setDevelopers(frontendDevelopers);
+          })
+          .catch((error) => console.error('Error loading developers:', error));
+
+        getProjectsAPI()
+          .then((response) => {
+            const frontendProjects: Project[] = response.results.map((p: any) => ({
+              id: p.id,
+              code: p.code,
+              name: p.name,
+              developer: p.developer_name || '',
+              type: p.type || '',
+              city: p.city || '',
+              paymentMethod: p.payment_method || '',
+            }));
+            setProjects(frontendProjects);
+          })
+          .catch((error) => console.error('Error loading projects:', error));
+
+        getUnitsAPI()
+          .then((response) => {
+            const frontendUnits: Unit[] = response.results.map((u: any) => ({
+              id: u.id,
+              code: u.code,
+              project: u.project_name || '',
+              bedrooms: u.bedrooms || 0,
+              price: u.price ? parseFloat(u.price.toString()) : 0,
+              bathrooms: u.bathrooms || 0,
+              type: u.type || '',
+              finishing: u.finishing || '',
+              city: u.city || '',
+              district: u.district || '',
+              zone: u.zone || '',
+              isSold: u.is_sold || false,
+            }));
+            setUnits(frontendUnits);
+          })
+          .catch((error) => console.error('Error loading units:', error));
+
+        getOwnersAPI()
+          .then((response) => {
+            const frontendOwners: Owner[] = response.results.map((o: any) => ({
+              id: o.id,
+              code: o.code,
+              name: o.name,
+              phone: o.phone || '',
+              city: o.city || '',
+              district: o.district || '',
+            }));
+            setOwners(frontendOwners);
+          })
+          .catch((error) => console.error('Error loading owners:', error));
       }
+
+      // تحميل Services data (فقط لشركات الخدمات)
+      if (currentUser?.company?.specialization === 'services') {
+        getServicesAPI()
+          .then((response) => {
+            const frontendServices: Service[] = response.results.map((s: any) => ({
+              id: s.id,
+              code: s.code,
+              name: s.name,
+              description: s.description || '',
+              price: s.price ? parseFloat(s.price.toString()) : 0,
+              duration: s.duration || '',
+              category: s.category || '',
+              provider: s.provider_name || undefined,
+              isActive: s.is_active !== false,
+            }));
+            setServices(frontendServices);
+          })
+          .catch((error) => console.error('Error loading services:', error));
+
+        getServicePackagesAPI()
+          .then((response) => {
+            const frontendPackages: ServicePackage[] = response.results.map((p: any) => ({
+              id: p.id,
+              code: p.code,
+              name: p.name,
+              description: p.description || '',
+              price: p.price ? parseFloat(p.price.toString()) : 0,
+              duration: p.duration || '',
+              services: p.services || [],
+              isActive: p.is_active !== false,
+            }));
+            setServicePackages(frontendPackages);
+          })
+          .catch((error) => console.error('Error loading service packages:', error));
+
+        getServiceProvidersAPI()
+          .then((response) => {
+            const frontendProviders: ServiceProvider[] = response.results.map((p: any) => ({
+              id: p.id,
+              code: p.code,
+              name: p.name,
+              phone: p.phone || '',
+              email: p.email || '',
+              specialization: p.specialization || '',
+              rating: p.rating ? parseFloat(p.rating.toString()) : undefined,
+            }));
+            setServiceProviders(frontendProviders);
+          })
+          .catch((error) => console.error('Error loading service providers:', error));
+      }
+
+      // تحميل Products data (فقط لشركات المنتجات)
+      if (currentUser?.company?.specialization === 'products') {
+        getProductsAPI()
+          .then((response) => {
+            const frontendProducts: Product[] = response.results.map((p: any) => ({
+              id: p.id,
+              code: p.code,
+              name: p.name,
+              description: p.description || '',
+              price: p.price ? parseFloat(p.price.toString()) : 0,
+              cost: p.cost ? parseFloat(p.cost.toString()) : 0,
+              stock: p.stock || 0,
+              category: p.category_name || '',
+              supplier: p.supplier_name || undefined,
+              sku: p.sku || undefined,
+              image: undefined, // Image removed
+              isActive: p.is_active !== false,
+            }));
+            setProducts(frontendProducts);
+          })
+          .catch((error) => console.error('Error loading products:', error));
+
+        getProductCategoriesAPI()
+          .then((response) => {
+            const frontendCategories: ProductCategory[] = response.results.map((c: any) => ({
+              id: c.id,
+              code: c.code,
+              name: c.name,
+              description: c.description || '',
+              parentCategory: c.parent_category || undefined,
+            }));
+            setProductCategories(frontendCategories);
+          })
+          .catch((error) => console.error('Error loading product categories:', error));
+
+        getSuppliersAPI()
+          .then((response) => {
+            const frontendSuppliers: Supplier[] = response.results.map((s: any) => ({
+              id: s.id,
+              code: s.code,
+              name: s.name,
+              logo: '', // Logo removed
+              phone: s.phone || '',
+              email: s.email || '',
+              address: s.address || '',
+              contactPerson: s.contact_person || '',
+              specialization: s.specialization || '',
+            }));
+            setSuppliers(frontendSuppliers);
+          })
+          .catch((error) => console.error('Error loading suppliers:', error));
+      }
+
+      // تحميل Campaigns
+      getCampaignsAPI()
+        .then((response) => {
+          const frontendCampaigns: Campaign[] = response.results.map((c: any) => ({
+            id: c.id,
+            code: c.code,
+            name: c.name,
+            budget: c.budget ? parseFloat(c.budget.toString()) : 0,
+            createdAt: c.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+            isActive: c.is_active !== false,
+          }));
+          setCampaigns(frontendCampaigns);
+        })
+        .catch((error) => console.error('Error loading campaigns:', error));
+
+      // تحميل Settings data
+      getChannelsAPI()
+        .then((response: any) => {
+          const results = Array.isArray(response) ? response : ((response as any)?.results || []);
+          const frontendChannels: Channel[] = results.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            type: c.type,
+            priority: c.priority.charAt(0).toUpperCase() + c.priority.slice(1) as 'High' | 'Medium' | 'Low',
+          }));
+          setChannels(frontendChannels);
+        })
+        .catch((error) => console.error('Error loading channels:', error));
+
+      getStagesAPI()
+        .then((response: any) => {
+          const results = Array.isArray(response) ? response : ((response as any)?.results || []);
+          const frontendStages: Stage[] = results.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            description: s.description || '',
+            color: s.color || '#808080',
+            required: s.required || false,
+            autoAdvance: s.auto_advance || false,
+          }));
+          setStages(frontendStages);
+        })
+        .catch((error) => console.error('Error loading stages:', error));
+
+      getStatusesAPI()
+        .then((response: any) => {
+          const results = Array.isArray(response) ? response : ((response as any)?.results || []);
+          const frontendStatuses: Status[] = results.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            description: s.description || '',
+            category: s.category.replace('_', ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') as 'Active' | 'Inactive' | 'Follow Up' | 'Closed',
+            color: s.color || '#808080',
+            isDefault: s.is_default || false,
+            isHidden: s.is_hidden || false,
+          }));
+          setStatuses(frontendStatuses);
+        })
+        .catch((error) => console.error('Error loading statuses:', error));
+
+      // تحميل Tasks وتحويلها إلى Activities و Todos
+      // يجب تحميلها بعد تحميل deals و leads و users
+      Promise.all([getDealsAPI(), getLeadsAPI(), getUsersAPI(), getClientTasksAPI()])
+        .then(([dealsResponse, leadsResponse, usersResponse, clientTasksResponse]) => {
+          // تحويل بيانات Deals
+          const frontendDeals: Deal[] = dealsResponse.results.map((d: any) => ({
+            id: d.id,
+            clientName: d.client_name || '',
+            paymentMethod: d.payment_method || 'Cash',
+            status: d.stage === 'won' ? 'Won' : d.stage === 'lost' ? 'Lost' : d.stage === 'on_hold' ? 'On Hold' : d.stage === 'in_progress' ? 'In Progress' : 'Cancelled',
+            value: d.value ? parseFloat(d.value.toString()) : 0,
+            leadId: d.client,
+            unit: d.unit_name || undefined,
+            project: d.project_name || undefined,
+          }));
+
+          // تحويل ClientTasks
+          const frontendClientTasks: ClientTask[] = clientTasksResponse.results.map((ct: any) => ({
+            id: ct.id,
+            clientId: ct.client,
+            stage: ct.stage,
+            notes: ct.notes || '',
+            reminderDate: ct.reminder_date || null,
+            createdBy: ct.created_by || 0,
+            createdAt: ct.created_at || new Date().toISOString(),
+          }));
+          setClientTasks(frontendClientTasks);
+
+          // تحويل بيانات Leads
+          const frontendLeads: Lead[] = leadsResponse.results.map((c: any) => {
+            // تحويل status من API إلى Frontend format
+            const statusMap: { [key: string]: Lead['status'] } = {
+              'untouched': 'Untouched',
+              'touched': 'Touched',
+              'following': 'Following',
+              'meeting': 'Meeting',
+              'no_answer': 'No Answer',
+              'out_of_service': 'Out Of Service',
+            };
+            const status = statusMap[c.status?.toLowerCase()] || 'Untouched';
+            
+            // البحث عن آخر ClientTask لهذا Lead
+            const clientTasksForLead = frontendClientTasks.filter(ct => ct.clientId === c.id);
+            let lastFeedback = '';
+            let notes = '';
+            let lastStage: Lead['status'] = status;
+            
+            if (clientTasksForLead.length > 0) {
+              const lastTask = clientTasksForLead.sort((a, b) => 
+                parseUTCDate(b.createdAt).getTime() - parseUTCDate(a.createdAt).getTime()
+              )[0];
+              lastFeedback = lastTask.notes || '';
+              notes = lastTask.notes || '';
+              // تحويل stage من ClientTask إلى format مناسب
+              const stageMap: { [key: string]: Lead['status'] } = {
+                'untouched': 'Untouched',
+                'touched': 'Touched',
+                'following': 'Following',
+                'meeting': 'Meeting',
+                'no_answer': 'No Answer',
+                'out_of_service': 'Out Of Service',
+              };
+              lastStage = stageMap[lastTask.stage?.toLowerCase()] || status;
+            }
+            
+            return {
+              id: c.id,
+              name: c.name,
+              phone: c.phone_number || '',
+              type: c.type === 'fresh' ? 'Fresh' : 'Cold',
+              priority: c.priority === 'high' ? 'High' : c.priority === 'medium' ? 'Medium' : 'Low',
+              status: status,
+              assignedTo: typeof c.assigned_to === 'number' ? c.assigned_to : 0,
+              createdAt: formatDateToLocal(c.created_at),
+              communicationWay: c.communication_way === 'whatsapp' ? 'WhatsApp' : 'Call',
+              budget: c.budget ? parseFloat(c.budget.toString()) : 0,
+              // Computed fields from ClientTasks
+              lastFeedback: lastFeedback,
+              notes: notes,
+              lastStage: lastStage,
+            };
+          });
+
+          // تحويل بيانات Users
+          const frontendUsers: User[] = usersResponse.results.map((u: any) => ({
+            id: u.id,
+            name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username,
+            username: u.username,
+            email: u.email,
+            phone: u.phone || '',
+            role: u.role === 'admin' ? 'Owner' : u.role === 'employee' ? 'Sales Agent' : u.role,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(u.username)}&background=random`,
+            company: u.company ? {
+              id: u.company,
+              name: u.company_name || 'Unknown Company',
+              specialization: (u.company_specialization || 'real_estate') as 'real_estate' | 'services' | 'products',
+            } : undefined,
+          }));
+
+          // تحديث state
+          setDeals(frontendDeals);
+          setLeads(frontendLeads);
+          setUsers(frontendUsers);
+
+          // الآن تحميل Tasks
+          return getTasksAPI().then((tasksResponse) => {
+            // تحويل Tasks إلى Activities - من API فقط، بدون أي mock data
+            // جميع Activities تأتي من Tasks في قاعدة البيانات
+            const frontendActivities: Activity[] = tasksResponse.results.map((t: any) => {
+              // استخدام stage مباشرة من API (نفس الاسم والقيم)
+              const stage = t.stage as TaskStage;
+
+              // البحث عن اسم المستخدم من deal
+              const employeeUsername = t.deal_employee_username;
+              const user = employeeUsername ? frontendUsers.find(u => u.username === employeeUsername) : null;
+
+              return {
+                id: t.id,
+                user: user?.name || employeeUsername || 'Unknown',
+                lead: t.deal_client_name || '',
+                stage: stage,
+                date: formatDateToLocal(t.created_at),
+                notes: t.notes || '',
+              };
+            });
+            // تحديث Activities من API فقط - لا mock data
+            setActivities(frontendActivities);
+
+            // تحويل Tasks التي لها reminder_date إلى Todos (Active) - من API فقط
+            const frontendTodos: Todo[] = tasksResponse.results
+              .filter((t: any) => t.reminder_date)
+              .map((t: any) => {
+                // استخدام stage مباشرة من API (نفس الاسم والقيم)
+                const stage = t.stage as TaskStage;
+
+                const deal = frontendDeals.find(d => d.id === t.deal);
+                const lead = frontendLeads.find(l => l.id === deal?.leadId);
+
+                return {
+                  id: t.id,
+                  stage: stage,
+                  leadName: lead?.name || t.deal_client_name || '',
+                  leadPhone: lead?.phone || '',
+                  dueDate: formatDateToLocal(t.reminder_date),
+                };
+              });
+            // تحديث TODOs Active من API فقط
+            setTodos(frontendTodos);
+
+            // تحويل Tasks التي ليس لها reminder_date إلى Todos (Completed) - من API فقط
+            // هذه هي Tasks التي تم إكمالها (reminder_date = null)
+            const frontendCompletedTodos: Todo[] = tasksResponse.results
+              .filter((t: any) => !t.reminder_date)
+              .map((t: any) => {
+                // استخدام stage مباشرة من API (نفس الاسم والقيم)
+                const stage = t.stage as TaskStage;
+
+                const deal = frontendDeals.find(d => d.id === t.deal);
+                const lead = frontendLeads.find(l => l.id === deal?.leadId);
+
+                return {
+                  id: t.id,
+                  stage: stage,
+                  leadName: lead?.name || t.deal_client_name || '',
+                  leadPhone: lead?.phone || '',
+                  dueDate: formatDateToLocal(t.created_at), // استخدام created_at كـ dueDate للـ completed todos
+                };
+              });
+            // تحديث TODOs Completed من API فقط
+            setCompletedTodos(frontendCompletedTodos);
+          });
+        })
+        .catch((error) => console.error('Error loading tasks/activities:', error));
     }
 
     const handleResize = () => {
@@ -310,14 +961,17 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [isLoggedIn, users]);
+  }, [isLoggedIn, dataLoaded, currentUser?.company?.specialization]); // إضافة specialization للتحميل عند تغيير التخصص
 
   const setIsLoggedIn = (loggedIn: boolean) => {
     setIsLoggedInState(loggedIn);
     localStorage.setItem('isLoggedIn', loggedIn.toString());
     if (!loggedIn) {
       localStorage.removeItem('currentUser');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       setCurrentUserState(null);
+      setDataLoaded(false); // إعادة تعيين dataLoaded عند تسجيل الخروج
     }
   };
 
@@ -330,47 +984,61 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     }
   };
 
+  // Apply theme to document on mount and when theme changes
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
+
   const setTheme = (theme: Theme) => {
     setThemeState(theme);
     localStorage.setItem('theme', theme);
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    // Theme will be applied via useEffect
   };
   
   const setLang = (lang: Language) => {
     setLanguage(lang);
     localStorage.setItem('language', lang);
     document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   }
 
   const setAppColor = (color: string) => {
-    setPrimaryColor(color);
-    localStorage.setItem('primaryColor', color);
+    // Color customization disabled - primary color is fixed to purple
+    // Do nothing - color cannot be changed
   };
 
   const setAppSubPageColor = (color: string) => {
-    setActiveSubPageColorState(color);
-    localStorage.setItem('activeSubPageColor', color);
+    // Color customization disabled - active sub-page color is fixed to purple
+    // Do nothing - color cannot be changed
   };
 
   useEffect(() => {
-    const hsl = hexToHsl(primaryColor);
-    if(hsl) {
-        const [h, s, l] = hsl;
-        const root = document.documentElement;
-        root.style.setProperty('--primary', `${h} ${s}% ${l}%`);
-        root.style.setProperty('--primary-50', `${h} ${s}% ${l + (100 - l) * 0.95}%`);
-        root.style.setProperty('--primary-100', `${h} ${s}% ${l + (100 - l) * 0.9}%`);
-        root.style.setProperty('--primary-200', `${h} ${s}% ${l + (100 - l) * 0.8}%`);
-        root.style.setProperty('--primary-300', `${h} ${s}% ${l + (100 - l) * 0.7}%`);
-        root.style.setProperty('--primary-400', `${h} ${s}% ${l + (100 - l) * 0.6}%`);
-        root.style.setProperty('--primary-500', `${h} ${s}% ${l}%`);
-        root.style.setProperty('--primary-600', `${h} ${s}% ${l * 0.9}%`);
-        root.style.setProperty('--primary-700', `${h} ${s}% ${l * 0.8}%`);
-        root.style.setProperty('--primary-800', `${h} ${s}% ${l * 0.7}%`);
-        root.style.setProperty('--primary-900', `${h} ${s}% ${l * 0.6}%`);
-        // Foreground color logic
+    const shades = generateColorShades(primaryColor);
+    const root = document.documentElement;
+
+    // Set all primary color shades using the same method as admin-panel
+    // Only set --color-primary-* to match admin-panel exactly
+    for (const [shade, hslValue] of Object.entries(shades)) {
+      root.style.setProperty(`--color-primary-${shade}`, hslValue);
+    }
+    
+    // Also set legacy --primary-* variables for backward compatibility with existing CSS
+    for (const [shade, hslValue] of Object.entries(shades)) {
+      if (shade === '500') {
+        root.style.setProperty('--primary', hslValue);
+      }
+      root.style.setProperty(`--primary-${shade}`, hslValue);
+    }
+    
+    // Foreground color logic - extract lightness from the 500 shade
+    const hsl500 = shades['500'];
+    if (hsl500) {
+      const lMatch = hsl500.match(/(\d+)\s+\d+%\s+(\d+)%/);
+      if (lMatch) {
+        const l = parseInt(lMatch[2]);
         const foregroundColor = l > 50 ? '222.2 47.4% 11.2%' : '210 40% 98%';
         root.style.setProperty('--primary-foreground', foregroundColor);
+      }
     }
   }, [primaryColor]);
   
@@ -394,213 +1062,2018 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   };
 
   // --- CRUD Functions ---
-  const addUser = (userData: Omit<User, 'id' | 'avatar'>) => {
-    const newUser: User = {
-      ...userData,
-      id: Date.now(),
-      avatar: `https://picsum.photos/id/${Math.floor(Math.random() * 1000)}/200/200`,
-    };
-    setUsers(prev => [...prev, newUser]);
-  };
-  const deleteUser = (userId: number) => setUsers(prev => prev.filter(u => u.id !== userId));
-
-  const addLead = (leadData: Omit<Lead, 'id' | 'createdAt' | 'history' | 'lastFeedback' | 'notes' | 'lastStage' | 'reminder'>) => {
-    const newLead: Lead = {
-      ...leadData,
-      id: Date.now(),
-      createdAt: new Date().toISOString().split('T')[0],
-      history: [],
-      lastFeedback: 'Lead Created',
-      notes: '',
-      lastStage: 'Untouched',
-      reminder: '',
-      status: 'Untouched',
-    };
-    setLeads(prev => [newLead, ...prev]);
-  };
-
-  const addDeal = (dealData: Omit<Deal, 'id'>) => {
-    const newDeal: Deal = { ...dealData, id: Date.now() };
-    setDeals(prev => [newDeal, ...prev]);
-  };
-  const deleteDeal = (dealId: number) => setDeals(prev => prev.filter(d => d.id !== dealId));
-
-  const addCampaign = (campaignData: Omit<Campaign, 'id'>) => {
-    const newCampaign: Campaign = { ...campaignData, id: Date.now() };
-    setCampaigns(prev => [newCampaign, ...prev]);
-  };
-  const deleteCampaign = (campaignId: number) => setCampaigns(prev => prev.filter(c => c.id !== campaignId));
-  
-  const addDeveloper = (developerData: Omit<Developer, 'id' | 'code'>) => {
-    const lastCodeNum = developers.reduce((max, d) => {
-        const numStr = d.code.replace('DEV', '');
-        const num = parseInt(numStr, 10);
-        return !isNaN(num) && num > max ? num : max;
-    }, 0);
-    const newDeveloper: Developer = {
-      ...developerData,
-      id: Date.now(),
-      code: `DEV${(lastCodeNum + 1).toString().padStart(3, '0')}`
-    };
-    setDevelopers(prev => [newDeveloper, ...prev]);
-  };
-  const updateDeveloper = (updatedDeveloper: Developer) => {
-    setDevelopers(prev => prev.map(d => d.id === updatedDeveloper.id ? updatedDeveloper : d));
-  };
-  const deleteDeveloper = (developerId: number) => setDevelopers(prev => prev.filter(d => d.id !== developerId));
-
-
-  const addProject = (projectData: Omit<Project, 'id' | 'code'>) => {
-      const lastCodeNum = projects.reduce((max, p) => {
-          const num = parseInt(p.code.replace('PROJ', ''));
-          return num > max ? num : max;
-      }, 0);
-      const newProject: Project = { 
-          ...projectData, 
-          id: Date.now(),
-          code: `PROJ${(lastCodeNum + 1).toString().padStart(3, '0')}`
+  const addUser = async (userData: Omit<User, 'id' | 'avatar'>) => {
+    try {
+      // تحويل بيانات المستخدم من Frontend إلى تنسيق API
+      const [firstName, ...lastNameParts] = (userData.name || '').split(' ');
+      const lastName = lastNameParts.join(' ') || '';
+      
+      const apiUserData = {
+        username: userData.username || '',
+        email: userData.email || '',
+        password: userData.password || '',
+        first_name: firstName,
+        last_name: lastName,
+        role: userData.role === 'Owner' ? 'admin' : userData.role === 'Sales Agent' ? 'employee' : 'employee',
+        company: userData.company?.id,
       };
-      setProjects(prev => [newProject, ...prev]);
-  };
-  const updateProject = (updatedProject: Project) => {
-    setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
-  };
-  const deleteProject = (projectId: number) => setProjects(prev => prev.filter(p => p.id !== projectId));
-  
-  const addUnit = (unitData: Omit<Unit, 'id' | 'code' | 'isSold'>) => {
-       const lastCodeNum = units.reduce((max, u) => {
-          const num = parseInt(u.code.replace('UNIT', ''));
-          return num > max ? num : max;
-      }, 0);
-      const newUnit: Unit = { 
-          ...unitData, 
-          id: Date.now(),
-          code: `UNIT${(lastCodeNum + 1).toString().padStart(3, '0')}`,
-          isSold: false
+
+      const newUserResponse = await createUserAPI(apiUserData);
+      
+      // تحويل بيانات المستخدم الجديد من API إلى تنسيق Frontend
+      const newUser: User = {
+        id: newUserResponse.id,
+        name: `${newUserResponse.first_name || ''} ${newUserResponse.last_name || ''}`.trim() || newUserResponse.username,
+        username: newUserResponse.username,
+        email: newUserResponse.email,
+        role: newUserResponse.role === 'admin' ? 'Owner' : newUserResponse.role === 'employee' ? 'Sales Agent' : newUserResponse.role,
+        phone: '',
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(newUserResponse.username)}&background=random`,
+        company: newUserResponse.company ? {
+          id: newUserResponse.company,
+          name: 'Unknown Company',
+          specialization: 'real_estate' as const,
+        } : undefined,
       };
+      
+      setUsers(prev => [...prev, newUser]);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error; // أعد الخطأ للسماح للمكونات الأخرى بالتعامل معه
+    }
+  };
+  
+  const updateUser = async (userId: number, userData: Partial<User>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // الحصول على المستخدم الحالي للحصول على username
+      const existingUser = users.find(u => u.id === userId);
+      if (!existingUser) {
+        throw new Error('User not found');
+      }
+
+      // تحويل بيانات المستخدم من Frontend إلى تنسيق API
+      const [firstName, ...lastNameParts] = (userData.name || '').split(' ');
+      const lastName = lastNameParts.join(' ') || '';
+      
+      const apiUserData: any = {
+        username: existingUser.username, // username مطلوب من API
+        email: userData.email || existingUser.email || '',
+        first_name: firstName || existingUser.name?.split(' ')[0] || '',
+        last_name: lastName || existingUser.name?.split(' ').slice(1).join(' ') || '',
+        phone: userData.phone !== undefined ? userData.phone : existingUser.phone || '',
+        role: userData.role ? (userData.role === 'Owner' ? 'admin' : userData.role === 'Sales Agent' ? 'employee' : userData.role === 'Sales Manager' ? 'employee' : userData.role) : existingUser.role === 'Owner' ? 'admin' : existingUser.role === 'Sales Agent' ? 'employee' : existingUser.role === 'Sales Manager' ? 'employee' : existingUser.role,
+        company: currentUser.company.id,
+      };
+
+      // إذا تم توفير password، أضفه
+      if (userData.password) {
+        apiUserData.password = userData.password;
+      }
+
+      const updatedUserResponse = await updateUserAPI(userId, apiUserData);
+      
+      // تحويل بيانات المستخدم المحدث من API إلى تنسيق Frontend
+      const updatedUser: User = {
+        id: updatedUserResponse.id,
+        name: `${updatedUserResponse.first_name || ''} ${updatedUserResponse.last_name || ''}`.trim() || updatedUserResponse.username,
+        username: updatedUserResponse.username,
+        email: updatedUserResponse.email,
+        phone: updatedUserResponse.phone || '',
+        role: updatedUserResponse.role === 'admin' ? 'Owner' : updatedUserResponse.role === 'employee' ? 'Sales Agent' : updatedUserResponse.role,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(updatedUserResponse.username)}&background=random`,
+        company: updatedUserResponse.company ? {
+          id: updatedUserResponse.company,
+          name: updatedUserResponse.company_name || 'Unknown Company',
+          specialization: (updatedUserResponse.company_specialization || 'real_estate') as 'real_estate' | 'services' | 'products',
+        } : undefined,
+      };
+      
+      setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
+      
+      // إذا كان المستخدم المحدث هو currentUser، قم بتحديثه أيضاً
+      if (currentUser.id === userId) {
+        setCurrentUser(updatedUser);
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  };
+  
+  const deleteUser = async (userId: number) => {
+    try {
+      await deleteUserAPI(userId);
+      setUsers(prev => prev.filter(u => u.id !== userId));
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
+  };
+
+  const addLead = async (leadData: Omit<Lead, 'id' | 'createdAt' | 'history' | 'lastFeedback' | 'notes' | 'lastStage' | 'reminder'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // تحويل status من Frontend إلى API format
+      const statusMapToAPI: { [key: string]: string } = {
+        'Untouched': 'untouched',
+        'Touched': 'touched',
+        'Following': 'following',
+        'Meeting': 'meeting',
+        'No Answer': 'no_answer',
+        'Out Of Service': 'out_of_service',
+      };
+      
+      // تحويل بيانات Lead من Frontend إلى تنسيق API (Client)
+      const apiLeadData = {
+        name: leadData.name,
+        phone_number: leadData.phone || '',
+        priority: leadData.priority?.toLowerCase() || 'medium',
+        type: leadData.type?.toLowerCase() || 'fresh',
+        communication_way: leadData.communicationWay?.toLowerCase() || 'call',
+        status: statusMapToAPI[leadData.status || 'Untouched'] || 'untouched',
+        budget: leadData.budget || null,
+        company: currentUser.company.id,
+        assigned_to: leadData.assignedTo && leadData.assignedTo > 0 ? leadData.assignedTo : null,
+      };
+
+      const newLeadResponse = await createLeadAPI(apiLeadData);
+      
+      // تحويل بيانات Lead الجديد من API إلى تنسيق Frontend
+              // تحويل status من API إلى Frontend format
+              const statusMap: { [key: string]: Lead['status'] } = {
+                'untouched': 'Untouched',
+                'touched': 'Touched',
+                'following': 'Following',
+                'meeting': 'Meeting',
+                'no_answer': 'No Answer',
+                'out_of_service': 'Out Of Service',
+              };
+              const status = statusMap[newLeadResponse.status?.toLowerCase()] || 'Untouched';
+              
+              const newLead: Lead = {
+                id: newLeadResponse.id,
+                name: newLeadResponse.name,
+                phone: newLeadResponse.phone_number || '',
+                type: newLeadResponse.type === 'fresh' ? 'Fresh' : 'Cold',
+                priority: newLeadResponse.priority === 'high' ? 'High' : newLeadResponse.priority === 'medium' ? 'Medium' : 'Low',
+                status: status,
+                assignedTo: typeof newLeadResponse.assigned_to === 'number' ? newLeadResponse.assigned_to : 0,
+                createdAt: formatDateToLocal(newLeadResponse.created_at),
+                communicationWay: newLeadResponse.communication_way === 'whatsapp' ? 'WhatsApp' : 'Call',
+                budget: newLeadResponse.budget ? parseFloat(newLeadResponse.budget.toString()) : 0,
+              };
+      
+      setLeads(prev => [newLead, ...prev]);
+    } catch (error) {
+      console.error('Error creating lead:', error);
+      throw error;
+    }
+  };
+
+  const updateLead = async (leadId: number, leadData: Partial<Lead>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const lead = leads.find(l => l.id === leadId);
+      if (!lead) {
+        throw new Error('Lead not found');
+      }
+
+      // تحويل status من Frontend إلى API format
+      const statusMapToAPI: { [key: string]: string } = {
+        'Untouched': 'untouched',
+        'Touched': 'touched',
+        'Following': 'following',
+        'Meeting': 'meeting',
+        'No Answer': 'no_answer',
+        'Out Of Service': 'out_of_service',
+      };
+      
+      // تحويل بيانات Lead من Frontend إلى تنسيق API
+      const apiLeadData: any = {
+        name: leadData.name || lead.name,
+        phone_number: leadData.phone || lead.phone || '',
+        priority: leadData.priority?.toLowerCase() || lead.priority?.toLowerCase() || 'medium',
+        type: leadData.type?.toLowerCase() || lead.type?.toLowerCase() || 'fresh',
+        communication_way: leadData.communicationWay?.toLowerCase() || lead.communicationWay?.toLowerCase() || 'call',
+        status: leadData.status ? statusMapToAPI[leadData.status] : (lead.status ? statusMapToAPI[lead.status] : 'untouched'),
+        budget: leadData.budget !== undefined ? leadData.budget : lead.budget || null,
+        company: currentUser.company.id,
+        assigned_to: leadData.assignedTo !== undefined ? (leadData.assignedTo > 0 ? leadData.assignedTo : null) : (lead.assignedTo > 0 ? lead.assignedTo : null),
+      };
+
+      const updatedLeadResponse = await updateLeadAPI(leadId, apiLeadData);
+      
+      // تحويل status من API إلى Frontend format
+      const statusMap: { [key: string]: Lead['status'] } = {
+        'untouched': 'Untouched',
+        'touched': 'Touched',
+        'following': 'Following',
+        'meeting': 'Meeting',
+        'no_answer': 'No Answer',
+        'out_of_service': 'Out Of Service',
+      };
+      const status = statusMap[updatedLeadResponse.status?.toLowerCase()] || lead.status;
+      
+      // تحويل بيانات Lead المحدث من API إلى تنسيق Frontend
+      const updatedLead: Lead = {
+        id: updatedLeadResponse.id,
+        name: updatedLeadResponse.name,
+        phone: updatedLeadResponse.phone_number || '',
+        type: updatedLeadResponse.type === 'fresh' ? 'Fresh' : 'Cold',
+        priority: updatedLeadResponse.priority === 'high' ? 'High' : updatedLeadResponse.priority === 'medium' ? 'Medium' : 'Low',
+        status: status,
+        assignedTo: typeof updatedLeadResponse.assigned_to === 'number' ? updatedLeadResponse.assigned_to : 0,
+        createdAt: lead.createdAt, // الحفاظ على createdAt
+        communicationWay: updatedLeadResponse.communication_way === 'whatsapp' ? 'WhatsApp' : 'Call',
+        budget: updatedLeadResponse.budget ? parseFloat(updatedLeadResponse.budget.toString()) : 0,
+        // الحفاظ على computed fields من lead
+        lastFeedback: lead.lastFeedback,
+        notes: lead.notes,
+        lastStage: lead.lastStage,
+      };
+      
+      // تحديث state بشكل صريح
+      setLeads(prev => {
+        const updatedLeads = prev.map(l => l.id === leadId ? updatedLead : l);
+        return [...updatedLeads];
+      });
+      
+      // تحديث selectedLead إذا كان هو Lead المحدث
+      setSelectedLead(prev => {
+        if (prev && prev.id === leadId) {
+          return updatedLead;
+        }
+        return prev;
+      });
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      throw error;
+    }
+  };
+
+  const assignLeads = async (leadIds: number[], userId: number) => {
+    try {
+      // تحديث جميع Leads المحددة
+      await Promise.all(
+        leadIds.map(leadId => updateLead(leadId, { assignedTo: userId }))
+      );
+      
+      // مسح checkedLeadIds بعد الإسناد
+      setCheckedLeadIds(new Set());
+    } catch (error) {
+      console.error('Error assigning leads:', error);
+      throw error;
+    }
+  };
+
+  const addDeal = async (dealData: Omit<Deal, 'id'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // تحويل بيانات Deal من Frontend إلى تنسيق API
+      const apiDealData: any = {
+        client: dealData.leadId || null,
+        company: currentUser.company.id,
+        employee: currentUser.id,
+        stage: dealData.status?.toLowerCase() === 'won' ? 'won' : 
+               dealData.status?.toLowerCase() === 'lost' ? 'lost' :
+               dealData.status?.toLowerCase() === 'on hold' ? 'on_hold' :
+               dealData.status?.toLowerCase() === 'in progress' ? 'in_progress' : 'cancelled',
+      };
+
+      const newDealResponse = await createDealAPI(apiDealData);
+      
+      // تحويل بيانات Deal الجديد من API إلى تنسيق Frontend
+      const newDeal: Deal = {
+        id: newDealResponse.id,
+        clientName: newDealResponse.client_name || dealData.clientName,
+        paymentMethod: dealData.paymentMethod || 'Cash',
+        status: newDealResponse.stage === 'won' ? 'Won' : newDealResponse.stage === 'lost' ? 'Lost' : newDealResponse.stage === 'on_hold' ? 'On Hold' : newDealResponse.stage === 'in_progress' ? 'In Progress' : 'Cancelled',
+        value: dealData.value || 0,
+        leadId: newDealResponse.client,
+        unit: dealData.unit,
+        project: dealData.project,
+      };
+      
+      setDeals(prev => [newDeal, ...prev]);
+    } catch (error) {
+      console.error('Error creating deal:', error);
+      throw error;
+    }
+  };
+
+  const deleteDeal = async (dealId: number) => {
+    try {
+      await deleteDealAPI(dealId);
+      // تحديث state بشكل صريح
+      setDeals(prev => {
+        const filtered = prev.filter(d => d.id !== dealId);
+        return filtered;
+      });
+    } catch (error) {
+      console.error('Error deleting deal:', error);
+      throw error;
+    }
+  };
+
+  const addCampaign = async (campaignData: Omit<Campaign, 'id' | 'code' | 'createdAt'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiCampaignData: any = {
+        name: campaignData.name,
+        budget: campaignData.budget || 0,
+        is_active: campaignData.isActive !== false,
+        company: currentUser.company.id,
+      };
+
+      console.log('Creating campaign with data:', apiCampaignData);
+      const newCampaignResponse = await createCampaignAPI(apiCampaignData);
+      console.log('Campaign created successfully:', newCampaignResponse);
+      
+      const newCampaign: Campaign = {
+        id: newCampaignResponse.id,
+        code: newCampaignResponse.code,
+        name: newCampaignResponse.name,
+        budget: newCampaignResponse.budget ? parseFloat(newCampaignResponse.budget.toString()) : 0,
+        createdAt: formatDateToLocal(newCampaignResponse.created_at),
+        isActive: newCampaignResponse.is_active !== false,
+      };
+      
+      setCampaigns(prev => [newCampaign, ...prev]);
+    } catch (error: any) {
+      console.error('Error creating campaign:', error);
+      const errorMessage = error?.message || 'Failed to create campaign';
+      throw new Error(errorMessage);
+    }
+  };
+
+  const deleteCampaign = async (campaignId: number) => {
+    try {
+      await deleteCampaignAPI(campaignId);
+      // تحديث state بشكل صريح
+      setCampaigns(prev => {
+        const filtered = prev.filter(c => c.id !== campaignId);
+        return filtered;
+      });
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+      throw error;
+    }
+  };
+
+  const addActivity = async (activityData: Omit<Activity, 'id'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // البحث عن Lead ID من الاسم
+      const lead = leads.find(l => l.name === activityData.lead);
+      if (!lead) {
+        throw new Error('Lead not found');
+      }
+
+      // البحث عن Deal المرتبط بـ Lead
+      const deal = deals.find(d => d.leadId === lead.id);
+      if (!deal) {
+        throw new Error('Deal not found for this lead');
+      }
+
+      // استخدام stage مباشرة من activityData (نفس الاسم والقيم)
+      const stage = activityData.stage;
+
+      const apiTaskData = {
+        deal: deal.id,
+        stage: stage,
+        notes: activityData.notes || '',
+        reminder_date: null,
+      };
+
+      const newTaskResponse = await createTaskAPI(apiTaskData);
+      
+      // إضافة Activity جديد
+      const newActivity: Activity = {
+        id: newTaskResponse.id,
+        user: activityData.user,
+        lead: activityData.lead,
+        stage: stage,
+        date: newTaskResponse.created_at?.split('T')[0] || activityData.date,
+        notes: newTaskResponse.notes || activityData.notes,
+      };
+      
+      setActivities(prev => [newActivity, ...prev]);
+    } catch (error) {
+      console.error('Error creating activity:', error);
+      throw error;
+    }
+  };
+
+  // Add Todo function - creates a new Task with reminder_date
+  const addTodo = async (todoData: { dealId: number; stage: TaskStage; notes: string; reminderDate: string }) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // Find the deal
+      const deal = deals.find(d => d.id === todoData.dealId);
+      if (!deal) {
+        throw new Error('Deal not found');
+      }
+
+      // استخدام stage مباشرة من todoData (نفس الاسم والقيم)
+      const stage = todoData.stage;
+
+      // Create Task with reminder_date
+      const apiTaskData = {
+        deal: todoData.dealId,
+        stage: stage,
+        notes: todoData.notes || '',
+        reminder_date: todoData.reminderDate || null,
+      };
+
+      const newTaskResponse = await createTaskAPI(apiTaskData);
+      
+      // إضافة Activity جديد إلى state مباشرة
+      const dealObj = deals.find(d => d.id === todoData.dealId);
+      const lead = leads.find(l => l.id === dealObj?.leadId);
+      
+      const newActivity: Activity = {
+        id: newTaskResponse.id,
+        user: currentUser?.name || 'Unknown',
+        lead: lead?.name || dealObj?.clientName || '',
+        stage: stage,
+        date: formatDateToLocal(newTaskResponse.created_at),
+        notes: newTaskResponse.notes || todoData.notes || '',
+      };
+      
+      setActivities(prev => [newActivity, ...prev]);
+      
+      // إعادة تحميل TODOs من API لضمان التزامن (Active و Completed)
+      const tasksResponse = await getTasksAPI();
+      
+      // Active TODOs (مع reminder_date)
+      const activeTodos = tasksResponse.results
+        .filter((t: any) => t.reminder_date)
+        .map((t: any) => {
+          const stage = t.stage as TaskStage;
+
+          const dealObj = deals.find(d => d.id === t.deal);
+          const lead = leads.find(l => l.id === dealObj?.leadId);
+
+          return {
+            id: t.id,
+            stage: stage,
+            leadName: lead?.name || t.deal_client_name || '',
+            leadPhone: lead?.phone || '',
+            dueDate: formatDateToLocal(t.reminder_date),
+          };
+        });
+      
+      // Completed TODOs (بدون reminder_date)
+      const completedTodos = tasksResponse.results
+        .filter((t: any) => !t.reminder_date)
+        .map((t: any) => {
+          const stage = t.stage as TaskStage;
+
+          const dealObj = deals.find(d => d.id === t.deal);
+          const lead = leads.find(l => l.id === dealObj?.leadId);
+
+          return {
+            id: t.id,
+            stage: stage,
+            leadName: lead?.name || t.deal_client_name || '',
+            leadPhone: lead?.phone || '',
+            dueDate: formatDateToLocal(t.created_at),
+          };
+        });
+      
+      setTodos(activeTodos);
+      setCompletedTodos(completedTodos);
+    } catch (error) {
+      console.error('Error creating todo:', error);
+      throw error;
+    }
+  };
+
+  // Complete Todo function - removes reminder_date from Task
+  const completeTodo = async (todoId: number) => {
+    try {
+      // Find the Task that corresponds to this Todo
+      const taskResponse = await getTasksAPI();
+      const task = taskResponse.results.find((t: any) => t.id === todoId);
+
+      if (!task) {
+        throw new Error('Task not found');
+      }
+
+      // Find the todo before removing it
+      const todoToComplete = todos.find(t => t.id === todoId);
+      
+      // Update Task to remove reminder_date (mark as completed)
+      await updateTaskAPI(todoId, {
+        deal: task.deal,
+        stage: task.stage,
+        notes: task.notes || '',
+        reminder_date: null, // Remove reminder_date to complete the todo
+      });
+
+      // إعادة تحميل TODOs من API لضمان التزامن (Active و Completed)
+      const updatedTasksResponse = await getTasksAPI();
+      
+      // Active TODOs (مع reminder_date)
+      const activeTodos = updatedTasksResponse.results
+        .filter((t: any) => t.reminder_date)
+        .map((t: any) => {
+          const stage = t.stage as TaskStage;
+
+          const dealObj = deals.find(d => d.id === t.deal);
+          const lead = leads.find(l => l.id === dealObj?.leadId);
+
+          return {
+            id: t.id,
+            stage: stage,
+            leadName: lead?.name || t.deal_client_name || '',
+            leadPhone: lead?.phone || '',
+            dueDate: formatDateToLocal(t.reminder_date),
+          };
+        });
+      
+      // Completed TODOs (بدون reminder_date)
+      const completedTodos = updatedTasksResponse.results
+        .filter((t: any) => !t.reminder_date)
+        .map((t: any) => {
+          const stage = t.stage as TaskStage;
+
+          const dealObj = deals.find(d => d.id === t.deal);
+          const lead = leads.find(l => l.id === dealObj?.leadId);
+
+          return {
+            id: t.id,
+            stage: stage,
+            leadName: lead?.name || t.deal_client_name || '',
+            leadPhone: lead?.phone || '',
+            dueDate: formatDateToLocal(t.created_at),
+          };
+        });
+      
+      setTodos(activeTodos);
+      setCompletedTodos(completedTodos);
+    } catch (error) {
+      console.error('Error completing todo:', error);
+      throw error;
+    }
+  };
+  
+  const addDeveloper = async (developerData: Omit<Developer, 'id' | 'code'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiDeveloperData = {
+        name: developerData.name,
+        company: currentUser.company.id,
+      };
+
+      const newDeveloperResponse = await createDeveloperAPI(apiDeveloperData);
+      
+      const newDeveloper: Developer = {
+        id: newDeveloperResponse.id,
+        code: newDeveloperResponse.code,
+        name: newDeveloperResponse.name,
+      };
+      
+      setDevelopers(prev => [newDeveloper, ...prev]);
+    } catch (error) {
+      console.error('Error creating developer:', error);
+      throw error;
+    }
+  };
+
+  const updateDeveloper = async (updatedDeveloper: Developer) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // الحصول على الاسم القديم للمطور قبل التحديث
+      const oldDeveloperName = updatedDeveloper.name;
+
+      const apiDeveloperData = {
+        name: updatedDeveloper.name,
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateDeveloperAPI(updatedDeveloper.id, apiDeveloperData);
+      
+      const updated: Developer = {
+        id: updatedResponse.id,
+        code: updatedResponse.code,
+        name: updatedResponse.name,
+      };
+      
+      setDevelopers(prev => {
+        const updatedDevelopers = prev.map(d => d.id === updated.id ? updated : d);
+        // إرجاع array جديد لضمان أن React يكتشف التغيير
+        return [...updatedDevelopers];
+      });
+      
+      // تحديث جميع Projects المرتبطة بهذا المطور (cascading update)
+      const newDeveloperName = updatedResponse.name;
+      if (oldDeveloperName !== newDeveloperName) {
+        console.log(`Updating projects: changing developer name from "${oldDeveloperName}" to "${newDeveloperName}"`);
+        setProjects(prev => {
+          const beforeCount = prev.filter(p => p.developer === oldDeveloperName).length;
+          const updatedProjects = prev.map(p => 
+            p.developer === oldDeveloperName ? { ...p, developer: newDeveloperName } : p
+          );
+          const afterCount = updatedProjects.filter(p => p.developer === newDeveloperName).length;
+          console.log(`Projects updated: ${beforeCount} projects changed from "${oldDeveloperName}" to "${newDeveloperName}"`);
+          // إرجاع array جديد لضمان أن React يكتشف التغيير
+          return [...updatedProjects];
+        });
+      }
+    } catch (error) {
+      console.error('Error updating developer:', error);
+      throw error;
+    }
+  };
+
+  const deleteDeveloper = async (developerId: number) => {
+    try {
+      // البحث عن المطور قبل حذفه للحصول على اسمه
+      const developerToDelete = developers.find(d => d.id === developerId);
+      
+      await deleteDeveloperAPI(developerId);
+      
+      // تحديث state بشكل صريح
+      setDevelopers(prev => {
+        const filtered = prev.filter(d => d.id !== developerId);
+        return filtered;
+      });
+      
+      // حذف جميع Projects المرتبطة بهذا المطور (cascading delete)
+      if (developerToDelete) {
+        const projectsToDelete = projects.filter(p => p.developer === developerToDelete.name);
+        
+        // حذف Projects
+        setProjects(prev => {
+          const filtered = prev.filter(p => p.developer !== developerToDelete.name);
+          return filtered;
+        });
+        
+        // حذف جميع Units المرتبطة بهذه Projects
+        const projectNames = projectsToDelete.map(p => p.name);
+        setUnits(prev => {
+          const filtered = prev.filter(u => !projectNames.includes(u.project));
+          return filtered;
+        });
+        
+        // تحديث جميع Deals المرتبطة بهذه Projects (إزالة project و unit)
+        setDeals(prev => {
+          const updated = prev.map(d => {
+            if (d.project && projectNames.includes(d.project)) {
+              const { project, unit, ...rest } = d;
+              return rest;
+            }
+            return d;
+          });
+          return updated;
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting developer:', error);
+      throw error;
+    }
+  };
+
+
+  const addProject = async (projectData: Omit<Project, 'id' | 'code'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // التحقق من أن developers موجود
+      if (!developers || developers.length === 0) {
+        throw new Error('No developers available. Please add a developer first.');
+      }
+
+      // البحث عن developer ID من الاسم
+      const developer = developers.find(d => d.name === projectData.developer);
+      if (!developer) {
+        throw new Error(`Developer "${projectData.developer}" not found`);
+      }
+
+      const apiProjectData = {
+        name: projectData.name,
+        developer: developer.id,
+        type: projectData.type || '',
+        city: projectData.city || '',
+        payment_method: projectData.paymentMethod || '',
+        company: currentUser.company.id,
+      };
+
+      console.log('Creating project with data:', apiProjectData);
+      const newProjectResponse = await createProjectAPI(apiProjectData);
+      console.log('Project created, response:', newProjectResponse);
+      
+      // التحقق من أن الـ response يحتوي على البيانات المطلوبة
+      if (!newProjectResponse || !newProjectResponse.id) {
+        console.error('Invalid response:', newProjectResponse);
+        throw new Error('Invalid response from API');
+      }
+      
+      const newProject: Project = {
+        id: newProjectResponse.id,
+        code: newProjectResponse.code,
+        name: newProjectResponse.name,
+        developer: newProjectResponse.developer_name || projectData.developer,
+        type: newProjectResponse.type || '',
+        city: newProjectResponse.city || '',
+        paymentMethod: newProjectResponse.payment_method || '',
+      };
+      
+      console.log('Adding project to state:', newProject);
+      // تحديث state بشكل صريح
+      setProjects(prev => {
+        return [newProject, ...prev];
+      });
+    } catch (error) {
+      console.error('Error creating project:', error);
+      throw error;
+    }
+  };
+
+  const updateProject = async (updatedProject: Project) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // الحصول على الاسم القديم للمشروع من الـ state الحالي قبل التحديث
+      const oldProject = projects.find(p => p.id === updatedProject.id);
+      const oldProjectName = oldProject?.name || updatedProject.name;
+
+      const developer = developers.find(d => d.name === updatedProject.developer);
+      if (!developer) {
+        throw new Error('Developer not found');
+      }
+
+      const apiProjectData = {
+        name: updatedProject.name,
+        developer: developer.id,
+        type: updatedProject.type || '',
+        city: updatedProject.city || '',
+        payment_method: updatedProject.paymentMethod || '',
+        company: currentUser.company.id,
+      };
+
+      console.log('Updating project with data:', apiProjectData);
+      console.log('Old project name:', oldProjectName);
+      const updatedResponse = await updateProjectAPI(updatedProject.id, apiProjectData);
+      console.log('Update response:', updatedResponse);
+      
+      if (!updatedResponse || !updatedResponse.id) {
+        console.error('Invalid response:', updatedResponse);
+        throw new Error('Invalid response from API');
+      }
+      
+      // البحث عن اسم المطور من الـ response أو استخدام القيمة الحالية
+      const developerName = updatedResponse.developer_name || updatedProject.developer;
+      
+      // الحصول على الاسم الجديد للمشروع من الـ response
+      const newProjectName = updatedResponse.name;
+      
+      const updated: Project = {
+        id: updatedResponse.id,
+        code: updatedResponse.code,
+        name: newProjectName,
+        developer: developerName,
+        type: updatedResponse.type || '',
+        city: updatedResponse.city || '',
+        paymentMethod: updatedResponse.payment_method || '',
+      };
+      
+      // تحديث state بشكل صريح
+      setProjects(prev => {
+        const updatedProjects = prev.map(p => p.id === updated.id ? updated : p);
+        // إرجاع array جديد لضمان أن React يكتشف التغيير
+        return [...updatedProjects];
+      });
+      
+      // تحديث جميع الوحدات المرتبطة بهذا المشروع (cascading update)
+      if (oldProjectName !== newProjectName) {
+        console.log(`Updating units: changing project name from "${oldProjectName}" to "${newProjectName}"`);
+        setUnits(prev => {
+          const beforeCount = prev.filter(u => u.project === oldProjectName).length;
+          const updatedUnits = prev.map(u => 
+            u.project === oldProjectName ? { ...u, project: newProjectName } : u
+          );
+          const afterCount = updatedUnits.filter(u => u.project === newProjectName).length;
+          console.log(`Units updated: ${beforeCount} units changed from "${oldProjectName}" to "${newProjectName}"`);
+          // إرجاع array جديد لضمان أن React يكتشف التغيير
+          return [...updatedUnits];
+        });
+        
+        // تحديث جميع Deals المرتبطة بهذا المشروع
+        setDeals(prev => {
+          const updated = prev.map(d => {
+            if (d.project === oldProjectName) {
+              return { ...d, project: newProjectName };
+            }
+            return d;
+          });
+          // إرجاع array جديد لضمان أن React يكتشف التغيير
+          return [...updated];
+        });
+      }
+    } catch (error) {
+      console.error('Error updating project:', error);
+      throw error;
+    }
+  };
+
+  const deleteProject = async (projectId: number) => {
+    try {
+      // البحث عن المشروع قبل حذفه للحصول على اسمه
+      const projectToDelete = projects.find(p => p.id === projectId);
+      
+      if (!projectToDelete) {
+        console.error('Project not found:', projectId);
+        throw new Error('Project not found');
+      }
+      
+      console.log('Deleting project:', projectToDelete.name);
+      await deleteProjectAPI(projectId);
+      
+      // تحديث state بشكل صريح
+      setProjects(prev => {
+        const filtered = prev.filter(p => p.id !== projectId);
+        console.log('Projects after delete:', filtered.length);
+        return filtered;
+      });
+      
+      // حذف جميع الوحدات المرتبطة بهذا المشروع (cascading delete)
+      const projectName = projectToDelete.name;
+      console.log('Deleting units for project:', projectName);
+      
+      setUnits(prev => {
+        const beforeCount = prev.length;
+        const filtered = prev.filter(u => u.project !== projectName);
+        const afterCount = filtered.length;
+        console.log(`Units before: ${beforeCount}, after: ${afterCount}, deleted: ${beforeCount - afterCount}`);
+        // إرجاع array جديد لضمان أن React يكتشف التغيير
+        return [...filtered];
+      });
+      
+      // تحديث جميع Deals المرتبطة بهذا المشروع (إزالة project و unit)
+      setDeals(prev => {
+        const updated = prev.map(d => {
+          if (d.project === projectName) {
+            const { project, unit, ...rest } = d;
+            return rest;
+          }
+          return d;
+        });
+        // إرجاع array جديد لضمان أن React يكتشف التغيير
+        return [...updated];
+      });
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      throw error;
+    }
+  };
+  
+  const addUnit = async (unitData: Omit<Unit, 'id' | 'code' | 'isSold'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // البحث عن project ID من الاسم
+      const project = projects.find(p => p.name === unitData.project);
+      if (!project) {
+        throw new Error('Project not found');
+      }
+
+      const apiUnitData = {
+        name: unitData.project || '', // API يتطلب name - نستخدم project name كاسم مؤقت
+        project: project.id,
+        bedrooms: unitData.bedrooms || null,
+        price: unitData.price || null,
+        bathrooms: unitData.bathrooms || null,
+        type: unitData.type || '',
+        finishing: unitData.finishing || '',
+        city: unitData.city || '',
+        district: unitData.district || '',
+        zone: unitData.zone || '',
+        is_sold: false,
+        company: currentUser.company.id,
+      };
+
+      const newUnitResponse = await createUnitAPI(apiUnitData);
+      
+      const newUnit: Unit = {
+        id: newUnitResponse.id,
+        code: newUnitResponse.code,
+        project: unitData.project,
+        bedrooms: newUnitResponse.bedrooms || 0,
+        price: newUnitResponse.price ? parseFloat(newUnitResponse.price.toString()) : 0,
+        bathrooms: newUnitResponse.bathrooms || 0,
+        type: newUnitResponse.type || '',
+        finishing: newUnitResponse.finishing || '',
+        city: newUnitResponse.city || '',
+        district: newUnitResponse.district || '',
+        zone: newUnitResponse.zone || '',
+        isSold: newUnitResponse.is_sold || false,
+      };
+      
       setUnits(prev => [newUnit, ...prev]);
+    } catch (error) {
+      console.error('Error creating unit:', error);
+      throw error;
+    }
   };
 
-  const addOwner = (ownerData: Omit<Owner, 'id' | 'code'>) => {
-    const lastCodeNum = owners.reduce((max, o) => {
-        const num = parseInt(o.code.replace('OWN', ''));
-        return num > max ? num : max;
-    }, 0);
-    const newOwner: Owner = {
-      ...ownerData,
-      id: Date.now(),
-      code: `OWN${(lastCodeNum + 1).toString().padStart(3, '0')}`
-    };
-    setOwners(prev => [newOwner, ...prev]);
+  const updateUnit = async (updatedUnit: Unit) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // البحث عن project ID من الاسم
+      const project = projects.find(p => p.name === updatedUnit.project);
+      if (!project) {
+        throw new Error('Project not found');
+      }
+
+      const apiUnitData = {
+        name: updatedUnit.project || '',
+        project: project.id,
+        bedrooms: updatedUnit.bedrooms || null,
+        price: updatedUnit.price || null,
+        bathrooms: updatedUnit.bathrooms || null,
+        type: updatedUnit.type || '',
+        finishing: updatedUnit.finishing || '',
+        city: updatedUnit.city || '',
+        district: updatedUnit.district || '',
+        zone: updatedUnit.zone || '',
+        is_sold: updatedUnit.isSold || false,
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateUnitAPI(updatedUnit.id, apiUnitData);
+      
+      if (!updatedResponse || !updatedResponse.id) {
+        console.error('Invalid response:', updatedResponse);
+        throw new Error('Invalid response from API');
+      }
+      
+      const updated: Unit = {
+        id: updatedResponse.id,
+        code: updatedResponse.code,
+        project: updatedUnit.project, // استخدام الاسم من updatedUnit
+        bedrooms: updatedResponse.bedrooms || 0,
+        price: updatedResponse.price ? parseFloat(updatedResponse.price.toString()) : 0,
+        bathrooms: updatedResponse.bathrooms || 0,
+        type: updatedResponse.type || '',
+        finishing: updatedResponse.finishing || '',
+        city: updatedResponse.city || '',
+        district: updatedResponse.district || '',
+        zone: updatedResponse.zone || '',
+        isSold: updatedResponse.is_sold || false,
+      };
+      
+      // تحديث state بشكل صريح
+      setUnits(prev => {
+        const updatedUnits = prev.map(u => u.id === updated.id ? updated : u);
+        return [...updatedUnits];
+      });
+    } catch (error) {
+      console.error('Error updating unit:', error);
+      throw error;
+    }
   };
-  const updateOwner = (updatedOwner: Owner) => {
-    setOwners(prev => prev.map(o => o.id === updatedOwner.id ? updatedOwner : o));
+
+  const deleteUnit = async (unitId: number) => {
+    try {
+      await deleteUnitAPI(unitId);
+      // تحديث state بشكل صريح
+      setUnits(prev => {
+        const filtered = prev.filter(u => u.id !== unitId);
+        return [...filtered];
+      });
+    } catch (error) {
+      console.error('Error deleting unit:', error);
+      throw error;
+    }
   };
-  const deleteOwner = (ownerId: number) => setOwners(prev => prev.filter(o => o.id !== ownerId));
+
+  const addOwner = async (ownerData: Omit<Owner, 'id' | 'code'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiOwnerData = {
+        name: ownerData.name,
+        phone: ownerData.phone || '',
+        city: ownerData.city || '',
+        district: ownerData.district || '',
+        company: currentUser.company.id,
+      };
+
+      const newOwnerResponse = await createOwnerAPI(apiOwnerData);
+      
+      const newOwner: Owner = {
+        id: newOwnerResponse.id,
+        code: newOwnerResponse.code,
+        name: newOwnerResponse.name,
+        phone: newOwnerResponse.phone || '',
+        city: newOwnerResponse.city || '',
+        district: newOwnerResponse.district || '',
+      };
+      
+      setOwners(prev => [newOwner, ...prev]);
+    } catch (error) {
+      console.error('Error creating owner:', error);
+      throw error;
+    }
+  };
+
+  const updateOwner = async (updatedOwner: Owner) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiOwnerData = {
+        name: updatedOwner.name,
+        phone: updatedOwner.phone || '',
+        city: updatedOwner.city || '',
+        district: updatedOwner.district || '',
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateOwnerAPI(updatedOwner.id, apiOwnerData);
+      
+      const updated: Owner = {
+        id: updatedResponse.id,
+        code: updatedResponse.code,
+        name: updatedResponse.name,
+        phone: updatedResponse.phone || '',
+        city: updatedResponse.city || '',
+        district: updatedResponse.district || '',
+      };
+      
+      setOwners(prev => prev.map(o => o.id === updated.id ? updated : o));
+    } catch (error) {
+      console.error('Error updating owner:', error);
+      throw error;
+    }
+  };
+
+  const deleteOwner = async (ownerId: number) => {
+    try {
+      await deleteOwnerAPI(ownerId);
+      // تحديث state بشكل صريح
+      setOwners(prev => {
+        const filtered = prev.filter(o => o.id !== ownerId);
+        return filtered;
+      });
+    } catch (error) {
+      console.error('Error deleting owner:', error);
+      throw error;
+    }
+  };
 
   // Services CRUD
-  const addService = (serviceData: Omit<Service, 'id' | 'code'>) => {
-    const lastCodeNum = services.reduce((max, s) => {
-      const num = parseInt(s.code.replace('SVC', ''));
-      return !isNaN(num) && num > max ? num : max;
-    }, 0);
-    const newService: Service = {
-      ...serviceData,
-      id: Date.now(),
-      code: `SVC${(lastCodeNum + 1).toString().padStart(3, '0')}`
-    };
-    setServices(prev => [newService, ...prev]);
-  };
-  const updateService = (updatedService: Service) => {
-    setServices(prev => prev.map(s => s.id === updatedService.id ? updatedService : s));
-  };
-  const deleteService = (serviceId: number) => setServices(prev => prev.filter(s => s.id !== serviceId));
+  const addService = async (serviceData: Omit<Service, 'id' | 'code'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
 
-  const addServicePackage = (packageData: Omit<ServicePackage, 'id' | 'code'>) => {
-    const lastCodeNum = servicePackages.reduce((max, p) => {
-      const num = parseInt(p.code.replace('PKG', ''));
-      return !isNaN(num) && num > max ? num : max;
-    }, 0);
-    const newPackage: ServicePackage = {
-      ...packageData,
-      id: Date.now(),
-      code: `PKG${(lastCodeNum + 1).toString().padStart(3, '0')}`
-    };
-    setServicePackages(prev => [newPackage, ...prev]);
-  };
-  const updateServicePackage = (updatedPackage: ServicePackage) => {
-    setServicePackages(prev => prev.map(p => p.id === updatedPackage.id ? updatedPackage : p));
-  };
-  const deleteServicePackage = (packageId: number) => setServicePackages(prev => prev.filter(p => p.id !== packageId));
+      // البحث عن provider ID من الاسم (إن وجد)
+      let providerId = null;
+      if (serviceData.provider) {
+        const provider = serviceProviders.find(p => p.name === serviceData.provider);
+        providerId = provider?.id || null;
+      }
 
-  const addServiceProvider = (providerData: Omit<ServiceProvider, 'id' | 'code'>) => {
-    const lastCodeNum = serviceProviders.reduce((max, p) => {
-      const num = parseInt(p.code.replace('PRV', ''));
-      return !isNaN(num) && num > max ? num : max;
-    }, 0);
-    const newProvider: ServiceProvider = {
-      ...providerData,
-      id: Date.now(),
-      code: `PRV${(lastCodeNum + 1).toString().padStart(3, '0')}`
-    };
-    setServiceProviders(prev => [newProvider, ...prev]);
+      const apiServiceData = {
+        name: serviceData.name,
+        category: serviceData.category || '',
+        price: serviceData.price || 0,
+        duration: serviceData.duration || '',
+        description: serviceData.description || '',
+        provider: providerId,
+        is_active: serviceData.isActive !== false,
+        company: currentUser.company.id,
+      };
+
+      const newServiceResponse = await createServiceAPI(apiServiceData);
+      
+      const newService: Service = {
+        id: newServiceResponse.id,
+        code: newServiceResponse.code,
+        name: newServiceResponse.name,
+        description: newServiceResponse.description || '',
+        price: newServiceResponse.price ? parseFloat(newServiceResponse.price.toString()) : 0,
+        duration: newServiceResponse.duration || '',
+        category: newServiceResponse.category || '',
+        provider: newServiceResponse.provider_name || undefined,
+        isActive: newServiceResponse.is_active !== false,
+      };
+      
+      setServices(prev => [newService, ...prev]);
+    } catch (error) {
+      console.error('Error creating service:', error);
+      throw error;
+    }
   };
-  const updateServiceProvider = (updatedProvider: ServiceProvider) => {
-    setServiceProviders(prev => prev.map(p => p.id === updatedProvider.id ? updatedProvider : p));
+
+  const updateService = async (updatedService: Service) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      let providerId = null;
+      if (updatedService.provider) {
+        const provider = serviceProviders.find(p => p.name === updatedService.provider);
+        providerId = provider?.id || null;
+      }
+
+      const apiServiceData = {
+        name: updatedService.name,
+        category: updatedService.category || '',
+        price: updatedService.price || 0,
+        duration: updatedService.duration || '',
+        description: updatedService.description || '',
+        provider: providerId,
+        is_active: updatedService.isActive !== false,
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateServiceAPI(updatedService.id, apiServiceData);
+      
+      const updated: Service = {
+        id: updatedResponse.id,
+        code: updatedResponse.code,
+        name: updatedResponse.name,
+        description: updatedResponse.description || '',
+        price: updatedResponse.price ? parseFloat(updatedResponse.price.toString()) : 0,
+        duration: updatedResponse.duration || '',
+        category: updatedResponse.category || '',
+        provider: updatedResponse.provider_name || undefined,
+        isActive: updatedResponse.is_active !== false,
+      };
+      
+      setServices(prev => prev.map(s => s.id === updated.id ? updated : s));
+    } catch (error) {
+      console.error('Error updating service:', error);
+      throw error;
+    }
   };
-  const deleteServiceProvider = (providerId: number) => setServiceProviders(prev => prev.filter(p => p.id !== providerId));
+
+  const deleteService = async (serviceId: number) => {
+    try {
+      await deleteServiceAPI(serviceId);
+      // تحديث state بشكل صريح
+      setServices(prev => {
+        const filtered = prev.filter(s => s.id !== serviceId);
+        return filtered;
+      });
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      throw error;
+    }
+  };
+
+  const addServicePackage = async (packageData: Omit<ServicePackage, 'id' | 'code'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // البحث عن service IDs من الأسماء
+      const serviceIds = packageData.services
+        .map(serviceName => {
+          const service = services.find(s => s.name === serviceName);
+          return service?.id;
+        })
+        .filter((id): id is number => id !== undefined);
+
+      const apiPackageData = {
+        name: packageData.name,
+        description: packageData.description || '',
+        price: packageData.price || 0,
+        duration: packageData.duration || '',
+        services: serviceIds,
+        is_active: packageData.isActive !== false,
+        company: currentUser.company.id,
+      };
+
+      const newPackageResponse = await createServicePackageAPI(apiPackageData);
+      
+      const newPackage: ServicePackage = {
+        id: newPackageResponse.id,
+        code: newPackageResponse.code,
+        name: newPackageResponse.name,
+        description: newPackageResponse.description || '',
+        price: newPackageResponse.price ? parseFloat(newPackageResponse.price.toString()) : 0,
+        duration: newPackageResponse.duration || '',
+        services: packageData.services, // نحتفظ بالأسماء
+        isActive: newPackageResponse.is_active !== false,
+      };
+      
+      setServicePackages(prev => [newPackage, ...prev]);
+    } catch (error) {
+      console.error('Error creating service package:', error);
+      throw error;
+    }
+  };
+
+  const updateServicePackage = async (updatedPackage: ServicePackage) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const serviceIds = updatedPackage.services
+        .map(serviceName => {
+          const service = services.find(s => s.name === serviceName);
+          return service?.id;
+        })
+        .filter((id): id is number => id !== undefined);
+
+      const apiPackageData = {
+        name: updatedPackage.name,
+        description: updatedPackage.description || '',
+        price: updatedPackage.price || 0,
+        duration: updatedPackage.duration || '',
+        services: serviceIds,
+        is_active: updatedPackage.isActive !== false,
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateServicePackageAPI(updatedPackage.id, apiPackageData);
+      
+      const updated: ServicePackage = {
+        id: updatedResponse.id,
+        code: updatedResponse.code,
+        name: updatedResponse.name,
+        description: updatedResponse.description || '',
+        price: updatedResponse.price ? parseFloat(updatedResponse.price.toString()) : 0,
+        duration: updatedResponse.duration || '',
+        services: updatedPackage.services,
+        isActive: updatedResponse.is_active !== false,
+      };
+      
+      setServicePackages(prev => prev.map(p => p.id === updated.id ? updated : p));
+    } catch (error) {
+      console.error('Error updating service package:', error);
+      throw error;
+    }
+  };
+
+  const deleteServicePackage = async (packageId: number) => {
+    try {
+      await deleteServicePackageAPI(packageId);
+      // تحديث state بشكل صريح
+      setServicePackages(prev => {
+        const filtered = prev.filter(p => p.id !== packageId);
+        return filtered;
+      });
+    } catch (error) {
+      console.error('Error deleting service package:', error);
+      throw error;
+    }
+  };
+
+  const addServiceProvider = async (providerData: Omit<ServiceProvider, 'id' | 'code'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiProviderData = {
+        name: providerData.name,
+        phone: providerData.phone || '',
+        email: providerData.email || '',
+        specialization: providerData.specialization || '',
+        rating: providerData.rating || null,
+        company: currentUser.company.id,
+      };
+
+      const newProviderResponse = await createServiceProviderAPI(apiProviderData);
+      
+      const newProvider: ServiceProvider = {
+        id: newProviderResponse.id,
+        code: newProviderResponse.code,
+        name: newProviderResponse.name,
+        phone: newProviderResponse.phone || '',
+        email: newProviderResponse.email || '',
+        specialization: newProviderResponse.specialization || '',
+        rating: newProviderResponse.rating ? parseFloat(newProviderResponse.rating.toString()) : undefined,
+      };
+      
+      setServiceProviders(prev => [newProvider, ...prev]);
+    } catch (error) {
+      console.error('Error creating service provider:', error);
+      throw error;
+    }
+  };
+
+  const updateServiceProvider = async (updatedProvider: ServiceProvider) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiProviderData = {
+        name: updatedProvider.name,
+        phone: updatedProvider.phone || '',
+        email: updatedProvider.email || '',
+        specialization: updatedProvider.specialization || '',
+        rating: updatedProvider.rating || null,
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateServiceProviderAPI(updatedProvider.id, apiProviderData);
+      
+      const updated: ServiceProvider = {
+        id: updatedResponse.id,
+        code: updatedResponse.code,
+        name: updatedResponse.name,
+        phone: updatedResponse.phone || '',
+        email: updatedResponse.email || '',
+        specialization: updatedResponse.specialization || '',
+        rating: updatedResponse.rating ? parseFloat(updatedResponse.rating.toString()) : undefined,
+      };
+      
+      setServiceProviders(prev => prev.map(p => p.id === updated.id ? updated : p));
+    } catch (error) {
+      console.error('Error updating service provider:', error);
+      throw error;
+    }
+  };
+
+  const deleteServiceProvider = async (providerId: number) => {
+    try {
+      await deleteServiceProviderAPI(providerId);
+      // تحديث state بشكل صريح
+      setServiceProviders(prev => {
+        const filtered = prev.filter(p => p.id !== providerId);
+        return filtered;
+      });
+    } catch (error) {
+      console.error('Error deleting service provider:', error);
+      throw error;
+    }
+  };
 
   // Products CRUD
-  const addProduct = (productData: Omit<Product, 'id' | 'code'>) => {
-    const lastCodeNum = products.reduce((max, p) => {
-      const num = parseInt(p.code.replace('PRD', ''));
-      return !isNaN(num) && num > max ? num : max;
-    }, 0);
-    const newProduct: Product = {
-      ...productData,
-      id: Date.now(),
-      code: `PRD${(lastCodeNum + 1).toString().padStart(3, '0')}`
-    };
-    setProducts(prev => [newProduct, ...prev]);
-  };
-  const updateProduct = (updatedProduct: Product) => {
-    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
-  };
-  const deleteProduct = (productId: number) => setProducts(prev => prev.filter(p => p.id !== productId));
+  const addProduct = async (productData: Omit<Product, 'id' | 'code'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
 
-  const addProductCategory = (categoryData: Omit<ProductCategory, 'id' | 'code'>) => {
-    const lastCodeNum = productCategories.reduce((max, c) => {
-      const num = parseInt(c.code.replace('CAT', ''));
-      return !isNaN(num) && num > max ? num : max;
-    }, 0);
-    const newCategory: ProductCategory = {
-      ...categoryData,
-      id: Date.now(),
-      code: `CAT${(lastCodeNum + 1).toString().padStart(3, '0')}`
-    };
-    setProductCategories(prev => [newCategory, ...prev]);
-  };
-  const updateProductCategory = (updatedCategory: ProductCategory) => {
-    setProductCategories(prev => prev.map(c => c.id === updatedCategory.id ? updatedCategory : c));
-  };
-  const deleteProductCategory = (categoryId: number) => setProductCategories(prev => prev.filter(c => c.id !== categoryId));
+      // البحث عن category ID من الاسم
+      const category = productCategories.find(c => c.name === productData.category);
+      if (!category) {
+        throw new Error('Product category not found');
+      }
 
-  const addSupplier = (supplierData: Omit<Supplier, 'id' | 'code'>) => {
-    const lastCodeNum = suppliers.reduce((max, s) => {
-      const num = parseInt(s.code.replace('SUP', ''));
-      return !isNaN(num) && num > max ? num : max;
-    }, 0);
-    const newSupplier: Supplier = {
-      ...supplierData,
-      id: Date.now(),
-      code: `SUP${(lastCodeNum + 1).toString().padStart(3, '0')}`
-    };
-    setSuppliers(prev => [newSupplier, ...prev]);
+      // البحث عن supplier ID من الاسم (إن وجد)
+      let supplierId = null;
+      if (productData.supplier) {
+        const supplier = suppliers.find(s => s.name === productData.supplier);
+        supplierId = supplier?.id || null;
+      }
+
+      const apiProductData = {
+        name: productData.name,
+        description: productData.description || '',
+        category: category.id,
+        price: productData.price || 0,
+        cost: productData.cost || null,
+        stock: productData.stock || 0,
+        supplier: supplierId,
+        sku: productData.sku || '',
+        is_active: productData.isActive !== false,
+        company: currentUser.company.id,
+      };
+
+      const newProductResponse = await createProductAPI(apiProductData);
+      
+      const newProduct: Product = {
+        id: newProductResponse.id,
+        code: newProductResponse.code,
+        name: newProductResponse.name,
+        description: newProductResponse.description || '',
+        price: newProductResponse.price ? parseFloat(newProductResponse.price.toString()) : 0,
+        cost: newProductResponse.cost ? parseFloat(newProductResponse.cost.toString()) : 0,
+        stock: newProductResponse.stock || 0,
+        category: productData.category,
+        supplier: newProductResponse.supplier_name || undefined,
+        sku: newProductResponse.sku || undefined,
+        image: undefined, // Image removed
+        isActive: newProductResponse.is_active !== false,
+      };
+      
+      setProducts(prev => [newProduct, ...prev]);
+    } catch (error) {
+      console.error('Error creating product:', error);
+      throw error;
+    }
   };
-  const updateSupplier = (updatedSupplier: Supplier) => {
-    setSuppliers(prev => prev.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
+
+  const updateProduct = async (updatedProduct: Product) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const category = productCategories.find(c => c.name === updatedProduct.category);
+      if (!category) {
+        throw new Error('Product category not found');
+      }
+
+      let supplierId = null;
+      if (updatedProduct.supplier) {
+        const supplier = suppliers.find(s => s.name === updatedProduct.supplier);
+        supplierId = supplier?.id || null;
+      }
+
+      const apiProductData = {
+        name: updatedProduct.name,
+        description: updatedProduct.description || '',
+        category: category.id,
+        price: updatedProduct.price || 0,
+        cost: updatedProduct.cost || null,
+        stock: updatedProduct.stock || 0,
+        supplier: supplierId,
+        sku: updatedProduct.sku || '',
+        is_active: updatedProduct.isActive !== false,
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateProductAPI(updatedProduct.id, apiProductData);
+      
+      const updated: Product = {
+        id: updatedResponse.id,
+        code: updatedResponse.code,
+        name: updatedResponse.name,
+        description: updatedResponse.description || '',
+        price: updatedResponse.price ? parseFloat(updatedResponse.price.toString()) : 0,
+        cost: updatedResponse.cost ? parseFloat(updatedResponse.cost.toString()) : 0,
+        stock: updatedResponse.stock || 0,
+        category: updatedProduct.category,
+        supplier: updatedResponse.supplier_name || undefined,
+        sku: updatedResponse.sku || undefined,
+        image: undefined, // Image removed
+        isActive: updatedResponse.is_active !== false,
+      };
+      
+      setProducts(prev => prev.map(p => p.id === updated.id ? updated : p));
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw error;
+    }
   };
-  const deleteSupplier = (supplierId: number) => setSuppliers(prev => prev.filter(s => s.id !== supplierId));
+
+  const deleteProduct = async (productId: number) => {
+    try {
+      await deleteProductAPI(productId);
+      // تحديث state بشكل صريح
+      setProducts(prev => {
+        const filtered = prev.filter(p => p.id !== productId);
+        return filtered;
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      throw error;
+    }
+  };
+
+  const addProductCategory = async (categoryData: Omit<ProductCategory, 'id' | 'code'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      // البحث عن parent category ID من الاسم (إن وجد)
+      let parentCategoryId = null;
+      if (categoryData.parentCategory) {
+        const parentCategory = productCategories.find(c => c.name === categoryData.parentCategory);
+        parentCategoryId = parentCategory?.id || null;
+      }
+
+      const apiCategoryData = {
+        name: categoryData.name,
+        description: categoryData.description || '',
+        parent_category: parentCategoryId,
+        company: currentUser.company.id,
+      };
+
+      const newCategoryResponse = await createProductCategoryAPI(apiCategoryData);
+      
+      const newCategory: ProductCategory = {
+        id: newCategoryResponse.id,
+        code: newCategoryResponse.code,
+        name: newCategoryResponse.name,
+        description: newCategoryResponse.description || '',
+        parentCategory: newCategoryResponse.parent_category_name || undefined,
+      };
+      
+      setProductCategories(prev => [newCategory, ...prev]);
+    } catch (error) {
+      console.error('Error creating product category:', error);
+      throw error;
+    }
+  };
+
+  const updateProductCategory = async (updatedCategory: ProductCategory) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      let parentCategoryId = null;
+      if (updatedCategory.parentCategory) {
+        const parentCategory = productCategories.find(c => c.name === updatedCategory.parentCategory);
+        parentCategoryId = parentCategory?.id || null;
+      }
+
+      const apiCategoryData = {
+        name: updatedCategory.name,
+        description: updatedCategory.description || '',
+        parent_category: parentCategoryId,
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateProductCategoryAPI(updatedCategory.id, apiCategoryData);
+      
+      const updated: ProductCategory = {
+        id: updatedResponse.id,
+        code: updatedResponse.code,
+        name: updatedResponse.name,
+        description: updatedResponse.description || '',
+        parentCategory: updatedResponse.parent_category_name || undefined,
+      };
+      
+      setProductCategories(prev => prev.map(c => c.id === updated.id ? updated : c));
+    } catch (error) {
+      console.error('Error updating product category:', error);
+      throw error;
+    }
+  };
+
+  const deleteProductCategory = async (categoryId: number) => {
+    try {
+      await deleteProductCategoryAPI(categoryId);
+      // تحديث state بشكل صريح
+      setProductCategories(prev => {
+        const filtered = prev.filter(c => c.id !== categoryId);
+        return filtered;
+      });
+    } catch (error) {
+      console.error('Error deleting product category:', error);
+      throw error;
+    }
+  };
+
+  const addSupplier = async (supplierData: Omit<Supplier, 'id' | 'code'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiSupplierData = {
+        name: supplierData.name,
+        phone: supplierData.phone || '',
+        email: supplierData.email || '',
+        address: supplierData.address || '',
+        contact_person: supplierData.contactPerson || '',
+        specialization: supplierData.specialization || '',
+        company: currentUser.company.id,
+      };
+
+      const newSupplierResponse = await createSupplierAPI(apiSupplierData);
+      
+      const newSupplier: Supplier = {
+        id: newSupplierResponse.id,
+        code: newSupplierResponse.code,
+        name: newSupplierResponse.name,
+        logo: '', // Logo removed
+        phone: newSupplierResponse.phone || '',
+        email: newSupplierResponse.email || '',
+        address: newSupplierResponse.address || '',
+        contactPerson: newSupplierResponse.contact_person || '',
+        specialization: newSupplierResponse.specialization || '',
+      };
+      
+      setSuppliers(prev => [newSupplier, ...prev]);
+    } catch (error) {
+      console.error('Error creating supplier:', error);
+      throw error;
+    }
+  };
+
+  const updateSupplier = async (updatedSupplier: Supplier) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiSupplierData = {
+        name: updatedSupplier.name,
+        phone: updatedSupplier.phone || '',
+        email: updatedSupplier.email || '',
+        address: updatedSupplier.address || '',
+        contact_person: updatedSupplier.contactPerson || '',
+        specialization: updatedSupplier.specialization || '',
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateSupplierAPI(updatedSupplier.id, apiSupplierData);
+      
+      const updated: Supplier = {
+        id: updatedResponse.id,
+        code: updatedResponse.code,
+        name: updatedResponse.name,
+        logo: '', // Logo removed
+        phone: updatedResponse.phone || '',
+        email: updatedResponse.email || '',
+        address: updatedResponse.address || '',
+        contactPerson: updatedResponse.contact_person || '',
+        specialization: updatedResponse.specialization || '',
+      };
+      
+      setSuppliers(prev => prev.map(s => s.id === updated.id ? updated : s));
+    } catch (error) {
+      console.error('Error updating supplier:', error);
+      throw error;
+    }
+  };
+
+  const deleteSupplier = async (supplierId: number) => {
+    try {
+      await deleteSupplierAPI(supplierId);
+      // تحديث state بشكل صريح
+      setSuppliers(prev => {
+        const filtered = prev.filter(s => s.id !== supplierId);
+        return filtered;
+      });
+    } catch (error) {
+      console.error('Error deleting supplier:', error);
+      throw error;
+    }
+  };
+
+  // Client Tasks (Actions) functions
+  const addClientTask = async (clientTaskData: { clientId: number; stage: string; notes: string; reminderDate: string | null }) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiClientTaskData = {
+        client: clientTaskData.clientId,
+        stage: clientTaskData.stage,
+        notes: clientTaskData.notes || '',
+        reminder_date: clientTaskData.reminderDate || null,
+      };
+
+      const newClientTaskResponse = await createClientTaskAPI(apiClientTaskData);
+      
+      const newClientTask: ClientTask = {
+        id: newClientTaskResponse.id,
+        clientId: newClientTaskResponse.client,
+        stage: newClientTaskResponse.stage,
+        notes: newClientTaskResponse.notes || '',
+        reminderDate: newClientTaskResponse.reminder_date || null,
+        createdBy: newClientTaskResponse.created_by || currentUser.id,
+        createdAt: newClientTaskResponse.created_at || new Date().toISOString(),
+      };
+      
+      setClientTasks(prev => [newClientTask, ...prev]);
+
+      // تحديث Lead's history إذا كان selectedLead
+      if (selectedLead && selectedLead.id === clientTaskData.clientId) {
+        const user = users.find(u => u.id === currentUser.id);
+        const newHistoryEntry: TimelineEntry = {
+          id: newClientTask.id,
+          user: user?.name || 'Unknown',
+          avatar: user?.avatar || '',
+          action: `Updated stage to ${clientTaskData.stage}`,
+          details: clientTaskData.notes || '',
+          date: formatDateToLocal(newClientTask.createdAt),
+        };
+        setSelectedLead({
+          ...selectedLead,
+          history: [newHistoryEntry, ...selectedLead.history],
+          lastStage: clientTaskData.stage,
+        });
+      }
+    } catch (error) {
+      console.error('Error creating client task:', error);
+      throw error;
+    }
+  };
+
+  const updateClientTask = async (clientTaskId: number, clientTaskData: Partial<ClientTask>) => {
+    try {
+      const apiClientTaskData: any = {};
+      if (clientTaskData.stage !== undefined) apiClientTaskData.stage = clientTaskData.stage;
+      if (clientTaskData.notes !== undefined) apiClientTaskData.notes = clientTaskData.notes;
+      if (clientTaskData.reminderDate !== undefined) apiClientTaskData.reminder_date = clientTaskData.reminderDate;
+
+      const updatedResponse = await updateClientTaskAPI(clientTaskId, apiClientTaskData);
+      
+      const updated: ClientTask = {
+        id: updatedResponse.id,
+        clientId: updatedResponse.client,
+        stage: updatedResponse.stage,
+        notes: updatedResponse.notes || '',
+        reminderDate: updatedResponse.reminder_date || null,
+        createdBy: updatedResponse.created_by || 0,
+        createdAt: updatedResponse.created_at || new Date().toISOString(),
+      };
+      
+      setClientTasks(prev => {
+        const updatedTasks = prev.map(t => t.id === clientTaskId ? updated : t);
+        return [...updatedTasks];
+      });
+    } catch (error) {
+      console.error('Error updating client task:', error);
+      throw error;
+    }
+  };
+
+  const deleteClientTask = async (clientTaskId: number) => {
+    try {
+      await deleteClientTaskAPI(clientTaskId);
+      // تحديث state بشكل صريح
+      setClientTasks(prev => {
+        const filtered = prev.filter(t => t.id !== clientTaskId);
+        return filtered;
+      });
+    } catch (error) {
+      console.error('Error deleting client task:', error);
+      throw error;
+    }
+  };
+
+  // Settings functions
+  const addChannel = async (channelData: Omit<Channel, 'id'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiChannelData = {
+        name: channelData.name || 'New Channel',
+        type: channelData.type || 'Web',
+        priority: channelData.priority.toLowerCase(),
+        company: currentUser.company.id,
+      };
+
+      const newChannelResponse = await createChannelAPI(apiChannelData);
+      
+      const newChannel: Channel = {
+        id: newChannelResponse.id,
+        name: newChannelResponse.name,
+        type: newChannelResponse.type,
+        priority: newChannelResponse.priority.charAt(0).toUpperCase() + newChannelResponse.priority.slice(1) as 'High' | 'Medium' | 'Low',
+      };
+      
+      setChannels(prev => [newChannel, ...prev]);
+    } catch (error) {
+      console.error('Error creating channel:', error);
+      throw error;
+    }
+  };
+
+  const updateChannel = async (updatedChannel: Channel) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiChannelData = {
+        name: updatedChannel.name,
+        type: updatedChannel.type,
+        priority: updatedChannel.priority.toLowerCase(),
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateChannelAPI(updatedChannel.id, apiChannelData);
+      
+      const updated: Channel = {
+        id: updatedResponse.id,
+        name: updatedResponse.name,
+        type: updatedResponse.type,
+        priority: updatedResponse.priority.charAt(0).toUpperCase() + updatedResponse.priority.slice(1) as 'High' | 'Medium' | 'Low',
+      };
+      
+      setChannels(prev => prev.map(c => c.id === updated.id ? updated : c));
+    } catch (error) {
+      console.error('Error updating channel:', error);
+      throw error;
+    }
+  };
+
+  const deleteChannel = async (channelId: number) => {
+    try {
+      await deleteChannelAPI(channelId);
+      setChannels(prev => prev.filter(c => c.id !== channelId));
+    } catch (error) {
+      console.error('Error deleting channel:', error);
+      throw error;
+    }
+  };
+
+  const addStage = async (stageData: Omit<Stage, 'id'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiStageData = {
+        name: stageData.name || 'New Stage',
+        description: stageData.description || '',
+        color: stageData.color || '#808080',
+        required: stageData.required || false,
+        auto_advance: stageData.autoAdvance || false,
+        company: currentUser.company.id,
+      };
+
+      const newStageResponse = await createStageAPI(apiStageData);
+      
+      const newStage: Stage = {
+        id: newStageResponse.id,
+        name: newStageResponse.name,
+        description: newStageResponse.description || '',
+        color: newStageResponse.color || '#808080',
+        required: newStageResponse.required || false,
+        autoAdvance: newStageResponse.auto_advance || false,
+      };
+      
+      setStages(prev => [...prev, newStage].sort((a, b) => {
+        // Sort by order if available, otherwise by name
+        const orderA = (newStageResponse as any).order || 0;
+        const orderB = (prev.find(s => s.id === b.id) as any)?.order || 0;
+        return orderA - orderB;
+      }));
+    } catch (error) {
+      console.error('Error creating stage:', error);
+      throw error;
+    }
+  };
+
+  const updateStage = async (updatedStage: Stage) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiStageData = {
+        name: updatedStage.name,
+        description: updatedStage.description || '',
+        color: updatedStage.color || '#808080',
+        required: updatedStage.required || false,
+        auto_advance: updatedStage.autoAdvance || false,
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateStageAPI(updatedStage.id, apiStageData);
+      
+      const updated: Stage = {
+        id: updatedResponse.id,
+        name: updatedResponse.name,
+        description: updatedResponse.description || '',
+        color: updatedResponse.color || '#808080',
+        required: updatedResponse.required || false,
+        autoAdvance: updatedResponse.auto_advance || false,
+      };
+      
+      setStages(prev => prev.map(s => s.id === updated.id ? updated : s));
+    } catch (error) {
+      console.error('Error updating stage:', error);
+      throw error;
+    }
+  };
+
+  const deleteStage = async (stageId: number) => {
+    try {
+      await deleteStageAPI(stageId);
+      setStages(prev => prev.filter(s => s.id !== stageId));
+    } catch (error) {
+      console.error('Error deleting stage:', error);
+      throw error;
+    }
+  };
+
+  const addStatus = async (statusData: Omit<Status, 'id'>) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiStatusData = {
+        name: statusData.name || 'New Status',
+        description: statusData.description || '',
+        category: statusData.category.toLowerCase().replace(' ', '_'),
+        color: statusData.color || '#808080',
+        is_default: statusData.isDefault || false,
+        is_hidden: statusData.isHidden || false,
+        company: currentUser.company.id,
+      };
+
+      const newStatusResponse = await createStatusAPI(apiStatusData);
+      
+      const newStatus: Status = {
+        id: newStatusResponse.id,
+        name: newStatusResponse.name,
+        description: newStatusResponse.description || '',
+        category: newStatusResponse.category.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') as 'Active' | 'Inactive' | 'Follow Up' | 'Closed',
+        color: newStatusResponse.color || '#808080',
+        isDefault: newStatusResponse.is_default || false,
+        isHidden: newStatusResponse.is_hidden || false,
+      };
+      
+      setStatuses(prev => [newStatus, ...prev]);
+    } catch (error) {
+      console.error('Error creating status:', error);
+      throw error;
+    }
+  };
+
+  const updateStatus = async (updatedStatus: Status) => {
+    try {
+      if (!currentUser?.company?.id) {
+        throw new Error('User must be associated with a company');
+      }
+
+      const apiStatusData = {
+        name: updatedStatus.name,
+        description: updatedStatus.description || '',
+        category: updatedStatus.category.toLowerCase().replace(' ', '_'),
+        color: updatedStatus.color || '#808080',
+        is_default: updatedStatus.isDefault || false,
+        is_hidden: updatedStatus.isHidden || false,
+        company: currentUser.company.id,
+      };
+
+      const updatedResponse = await updateStatusAPI(updatedStatus.id, apiStatusData);
+      
+      const updated: Status = {
+        id: updatedResponse.id,
+        name: updatedResponse.name,
+        description: updatedResponse.description || '',
+        category: updatedResponse.category.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') as 'Active' | 'Inactive' | 'Follow Up' | 'Closed',
+        color: updatedResponse.color || '#808080',
+        isDefault: updatedResponse.is_default || false,
+        isHidden: updatedResponse.is_hidden || false,
+      };
+      
+      setStatuses(prev => prev.map(s => s.id === updated.id ? updated : s));
+    } catch (error) {
+      console.error('Error updating status:', error);
+      throw error;
+    }
+  };
+
+  const deleteStatus = async (statusId: number) => {
+    try {
+      await deleteStatusAPI(statusId);
+      setStatuses(prev => prev.filter(s => s.id !== statusId));
+    } catch (error) {
+      console.error('Error deleting status:', error);
+      throw error;
+    }
+  };
 
 
   const value: AppContextType = { 
@@ -610,11 +3083,15 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     currentPage, setCurrentPage, 
     t, 
     selectedLead, setSelectedLead,
+    selectedLeadForDeal, setSelectedLeadForDeal,
     selectedUser, setSelectedUser,
     currentUser, setCurrentUser,
     isSidebarOpen, setIsSidebarOpen,
     isAddLeadModalOpen, setIsAddLeadModalOpen,
+    isEditLeadModalOpen, setIsEditLeadModalOpen,
+    editingLead, setEditingLead,
     isAddActionModalOpen, setIsAddActionModalOpen,
+    isAddTodoModalOpen, setIsAddTodoModalOpen,
     isAssignLeadModalOpen, setIsAssignLeadModalOpen,
     isFilterDrawerOpen, setIsFilterDrawerOpen,
     checkedLeadIds, setCheckedLeadIds,
@@ -630,10 +3107,37 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     editingOwner, setEditingOwner,
     isEditDeveloperModalOpen, setIsEditDeveloperModalOpen,
     editingDeveloper, setEditingDeveloper,
+    isDeleteDeveloperModalOpen, setIsDeleteDeveloperModalOpen,
+    deletingDeveloper, setDeletingDeveloper,
+    isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen,
+    confirmDeleteConfig, setConfirmDeleteConfig,
     isEditProjectModalOpen, setIsEditProjectModalOpen,
     editingProject, setEditingProject,
+    isEditUnitModalOpen, setIsEditUnitModalOpen,
+    editingUnit, setEditingUnit,
+    // Services modals
+    isAddServiceModalOpen, setIsAddServiceModalOpen,
+    isEditServiceModalOpen, setIsEditServiceModalOpen,
+    editingService, setEditingService,
+    isAddServicePackageModalOpen, setIsAddServicePackageModalOpen,
+    isEditServicePackageModalOpen, setIsEditServicePackageModalOpen,
+    editingServicePackage, setEditingServicePackage,
+    isAddServiceProviderModalOpen, setIsAddServiceProviderModalOpen,
+    isEditServiceProviderModalOpen, setIsEditServiceProviderModalOpen,
+    editingServiceProvider, setEditingServiceProvider,
+    // Products modals
+    isAddProductModalOpen, setIsAddProductModalOpen,
+    isEditProductModalOpen, setIsEditProductModalOpen,
+    editingProduct, setEditingProduct,
+    isAddProductCategoryModalOpen, setIsAddProductCategoryModalOpen,
+    isEditProductCategoryModalOpen, setIsEditProductCategoryModalOpen,
+    editingProductCategory, setEditingProductCategory,
+    isAddSupplierModalOpen, setIsAddSupplierModalOpen,
+    isEditSupplierModalOpen, setIsEditSupplierModalOpen,
+    editingSupplier, setEditingSupplier,
     isDealsFilterDrawerOpen, setIsDealsFilterDrawerOpen,
     isAddUserModalOpen, setIsAddUserModalOpen,
+    isViewUserModalOpen, setIsViewUserModalOpen,
     isEditUserModalOpen, setIsEditUserModalOpen,
     isDeleteUserModalOpen, setIsDeleteUserModalOpen,
     isAddCampaignModalOpen, setIsAddCampaignModalOpen,
@@ -642,22 +3146,30 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     editingAccount, setEditingAccount,
     isChangePasswordModalOpen, setIsChangePasswordModalOpen,
     // Data and functions
-    users, addUser, deleteUser,
-    leads, addLead,
-    deals, addDeal, deleteDeal,
-    campaigns, addCampaign, deleteCampaign,
-    developers, addDeveloper, updateDeveloper, deleteDeveloper,
-    projects, addProject, updateProject, deleteProject,
-    units, addUnit,
-    owners, addOwner, updateOwner, deleteOwner,
+    users, setUsers, addUser, updateUser, deleteUser,
+    leads, setLeads, addLead, updateLead, assignLeads,
+    deals, setDeals, addDeal, deleteDeal,
+    campaigns, setCampaigns, addCampaign, deleteCampaign,
+    activities, setActivities, addActivity,
+    todos, setTodos, completedTodos, setCompletedTodos, addTodo, completeTodo,
+    developers, setDevelopers, addDeveloper, updateDeveloper, deleteDeveloper,
+    projects, setProjects, addProject, updateProject, deleteProject,
+    units, setUnits, addUnit, updateUnit, deleteUnit,
+    owners, setOwners, addOwner, updateOwner, deleteOwner,
     // Services
-    services, addService, updateService, deleteService,
-    servicePackages, addServicePackage, updateServicePackage, deleteServicePackage,
-    serviceProviders, addServiceProvider, updateServiceProvider, deleteServiceProvider,
+    services, setServices, addService, updateService, deleteService,
+    servicePackages, setServicePackages, addServicePackage, updateServicePackage, deleteServicePackage,
+    serviceProviders, setServiceProviders, addServiceProvider, updateServiceProvider, deleteServiceProvider,
     // Products
-    products, addProduct, updateProduct, deleteProduct,
-    productCategories, addProductCategory, updateProductCategory, deleteProductCategory,
-    suppliers, addSupplier, updateSupplier, deleteSupplier,
+    products, setProducts, addProduct, updateProduct, deleteProduct,
+    productCategories, setProductCategories, addProductCategory, updateProductCategory, deleteProductCategory,
+    suppliers, setSuppliers, addSupplier, updateSupplier, deleteSupplier,
+    // Client Tasks (Actions)
+    clientTasks, setClientTasks, addClientTask, updateClientTask, deleteClientTask,
+    // Settings
+    channels, setChannels, addChannel, updateChannel, deleteChannel,
+    stages, setStages, addStage, updateStage, deleteStage,
+    statuses, setStatuses, addStatus, updateStatus, deleteStatus,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -4,8 +4,21 @@ import { useAppContext } from '../context/AppContext';
 import { PageWrapper, Button, Card, Dropdown, DropdownItem, WhatsappIcon, Loader, PlusIcon } from '../components/index';
 import { User } from '../types';
 
+// Helper function to translate role
+const getRoleTranslation = (role: string, t: (key: string) => string): string => {
+    const roleMap: Record<string, string> = {
+        'Owner': 'owner',
+        'Sales Assistant': 'salesAssistant',
+        'Sales Manager': 'salesManager',
+        'Sales Agent': 'salesAgent',
+    };
+    
+    const translationKey = roleMap[role];
+    return translationKey ? t(translationKey) : role;
+};
+
 const UserCard = ({ user }: { user: User }) => {
-    const { t, setSelectedUser, setIsEditUserModalOpen, setIsDeleteUserModalOpen } = useAppContext();
+    const { t, setSelectedUser, setIsViewUserModalOpen, setIsEditUserModalOpen, setIsDeleteUserModalOpen } = useAppContext();
     
     const handleEdit = () => {
         setSelectedUser(user);
@@ -17,6 +30,26 @@ const UserCard = ({ user }: { user: User }) => {
         setIsDeleteUserModalOpen(true);
     };
 
+    const handleView = () => {
+        setSelectedUser(user);
+        setIsViewUserModalOpen(true);
+    };
+
+    const handleCall = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (user.phone) {
+            const phoneNumber = user.phone.replace(/\D/g, '');
+            if (phoneNumber) {
+                window.location.href = `tel:${phoneNumber}`;
+            } else {
+                alert(t('noPhoneNumber') || 'No phone number available');
+            }
+        } else {
+            alert(t('noPhoneNumber') || 'No phone number available');
+        }
+    };
+
     return (
         <Card className="relative text-center">
             <div className="absolute top-2 end-2">
@@ -25,7 +58,7 @@ const UserCard = ({ user }: { user: User }) => {
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                     </Button>
                 }>
-                    <DropdownItem onClick={() => { /* Implement View User navigation */ }}>{t('viewUser')}</DropdownItem>
+                    <DropdownItem onClick={handleView}>{t('viewUser')}</DropdownItem>
                     <DropdownItem onClick={handleEdit}>{t('editUser')}</DropdownItem>
                     <DropdownItem onClick={handleDelete}>{t('deleteUser')}</DropdownItem>
                 </Dropdown>
@@ -33,13 +66,13 @@ const UserCard = ({ user }: { user: User }) => {
             <div className="flex flex-col items-center pt-4">
                 <img src={user.avatar} alt={user.name} className="w-20 h-20 rounded-full mb-3" />
                 <h3 className="font-bold text-lg">{user.name}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{user.role}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{getRoleTranslation(user.role, t)}</p>
                 <p className="text-sm mt-1">{user.phone}</p>
                 <div className="flex gap-2 mt-4">
-                    <Button variant="secondary" className="text-xs px-3 py-1 h-auto">{t('call')}</Button>
+                    <Button variant="secondary" className="text-xs px-3 py-1 h-auto" onClick={handleCall}>{t('call')}</Button>
                     <a href={`https://wa.me/${user.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center">
                         <Button variant="secondary" className="text-xs px-3 py-1 h-auto !bg-green-500 text-white hover:!bg-green-600 flex items-center gap-1.5">
-                           <span className="hidden sm:inline">WhatsApp</span>
+                           <span className="hidden sm:inline">{t('whatsapp')}</span>
                         </Button>
                     </a>
                 </div>
@@ -51,7 +84,6 @@ const UserCard = ({ user }: { user: User }) => {
 
 export const UsersPage = () => {
     const { t, users, currentUser, setIsAddUserModalOpen } = useAppContext();
-    const [autoAssign, setAutoAssign] = useState(true);
     const [loading, setLoading] = useState(true);
     const userCount = users.length;
     
@@ -59,6 +91,21 @@ export const UsersPage = () => {
     const isAdmin = currentUser?.role === 'Owner';
 
     useEffect(() => {
+        // TODO: استدعي API لتحميل Users عند فتح الصفحة
+        // مثال:
+        // const loadUsers = async () => {
+        //   try {
+        //     const usersData = await getUsersAPI();
+        //     // TODO: استخدم setUsers من AppContext لتحديث البيانات
+        //   } catch (error) {
+        //     console.error('Error loading users:', error);
+        //   } finally {
+        //     setLoading(false);
+        //   }
+        // };
+        // loadUsers();
+        
+        // الكود الحالي (للاختبار فقط):
         const timer = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timer);
     }, []);
@@ -77,23 +124,14 @@ export const UsersPage = () => {
         <PageWrapper
             title={`${t('users')}: ${userCount}`}
             actions={
-                <>
-                    {isAdmin && (
-                        <Button 
-                            onClick={() => setIsAddUserModalOpen(true)}
-                            className="w-full sm:w-auto"
-                        >
-                            <PlusIcon className="w-4 h-4" /> {t('createUser')}
-                        </Button>
-                    )}
+                isAdmin && (
                     <Button 
-                        variant={autoAssign ? 'secondary' : 'danger'}
-                        onClick={() => setAutoAssign(!autoAssign)}
-                        className={`min-w-[180px] ${autoAssign ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'}`}
+                        onClick={() => setIsAddUserModalOpen(true)}
+                        className="w-full sm:w-auto"
                     >
-                        {t('autoAssignment')}: {autoAssign ? t('on') : t('off')}
+                        <PlusIcon className="w-4 h-4" /> {t('createUser')}
                     </Button>
-                </>
+                )
             }
         >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

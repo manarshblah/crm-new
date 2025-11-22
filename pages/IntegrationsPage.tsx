@@ -21,7 +21,7 @@ const platformConfig: Record<string, { name: string, icon: React.FC<React.SVGPro
 };
 
 export const IntegrationsPage = () => {
-    const { t, currentPage, setIsManageIntegrationAccountModalOpen, connectedAccounts, setConnectedAccounts, setEditingAccount } = useAppContext();
+    const { t, currentPage, setIsManageIntegrationAccountModalOpen, connectedAccounts, setConnectedAccounts, setEditingAccount, setConfirmDeleteConfig, setIsConfirmDeleteModalOpen } = useAppContext();
     const [loading, setLoading] = useState(true);
 
     const getPlatformDetails = (page: Page): PlatformDetails | null => {
@@ -54,6 +54,22 @@ export const IntegrationsPage = () => {
     };
 
     useEffect(() => {
+        // TODO: استدعي API لتحميل Connected Accounts عند فتح الصفحة
+        // مثال:
+        // const loadAccounts = async () => {
+        //   try {
+        //     const platform = currentPage === 'Meta' ? 'meta' : currentPage.toLowerCase();
+        //     const accounts = await getConnectedAccountsAPI(platform);
+        //     setConnectedAccounts(prev => ({ ...prev, [dataKey]: accounts }));
+        //   } catch (error) {
+        //     console.error('Error loading accounts:', error);
+        //   } finally {
+        //     setLoading(false);
+        //   }
+        // };
+        // loadAccounts();
+        
+        // الكود الحالي (للاختبار فقط):
         const timer = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timer);
     }, [currentPage]);
@@ -67,12 +83,34 @@ export const IntegrationsPage = () => {
     const { name, icon: Icon, accounts, dataKey } = platform;
     const pageTitle = `${name} ${t('integration')}`;
 
-    const handleDelete = (accountId: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            setConnectedAccounts(prev => ({
-                ...prev,
-                [dataKey]: prev[dataKey].filter((acc: Account) => acc.id !== accountId),
-            }));
+    const handleDelete = async (accountId: number) => {
+        const account = accounts.find(acc => acc.id === accountId);
+        if (account) {
+            setConfirmDeleteConfig({
+                title: t('disconnect') || 'Disconnect Account',
+                message: t('confirmDisconnectAccount') || 'Are you sure you want to disconnect',
+                itemName: account.name,
+                onConfirm: async () => {
+                    // TODO: استدعي deleteConnectedAccountAPI(accountId) هنا
+                    // مثال:
+                    // try {
+                    //   await deleteConnectedAccountAPI(accountId);
+                    //   setConnectedAccounts(prev => ({
+                    //     ...prev,
+                    //     [dataKey]: prev[dataKey].filter((acc: Account) => acc.id !== accountId),
+                    //   }));
+                    // } catch (error) {
+                    //   console.error('Error deleting account:', error);
+                    // }
+                    
+                    // الكود الحالي (للاختبار فقط):
+                    setConnectedAccounts(prev => ({
+                        ...prev,
+                        [dataKey]: prev[dataKey].filter((acc: Account) => acc.id !== accountId),
+                    }));
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 

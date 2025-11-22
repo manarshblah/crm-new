@@ -5,7 +5,6 @@
 import React, { useState } from 'react';
 // FIX: Corrected component import path to avoid conflict with `components.tsx`.
 import { Card, Button, Input, ToggleSwitch, TrashIcon, EyeIcon, EyeOffIcon, PlusIcon } from '../../components/index';
-import { MOCK_STATUSES } from '../../constants';
 import { Status } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 
@@ -16,37 +15,91 @@ const Label = ({ children, htmlFor }: { children?: React.ReactNode; htmlFor?: st
 
 // FIX: Made children optional to fix missing children prop error.
 const Select = ({ id, children, value, onChange, className }: { id: string; children?: React.ReactNode, value?: string, onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void, className?:string }) => (
-    <select id={id} value={value} onChange={onChange} className={`w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${className}`}>
+    <select id={id} value={value} onChange={onChange} className={`w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-gray-100 ${className}`}>
         {children}
     </select>
 );
 
 export const StatusesSettings = () => {
-    const { t } = useAppContext();
+    const { t, statuses, addStatus, updateStatus, deleteStatus, setConfirmDeleteConfig, setIsConfirmDeleteModalOpen } = useAppContext();
     const [customStatuses, setCustomStatuses] = useState(true);
     const [requireUpdates, setRequireUpdates] = useState(true);
-    const [statuses, setStatuses] = useState<Status[]>(MOCK_STATUSES);
-    const [defaultStatus, setDefaultStatus] = useState(MOCK_STATUSES.find(s => s.isDefault)?.name || '');
+    const [defaultStatus, setDefaultStatus] = useState('');
+    const [editingStatuses, setEditingStatuses] = useState<{ [key: number]: Partial<Status> }>({});
+    const [updateTimeouts, setUpdateTimeouts] = useState<{ [key: number]: NodeJS.Timeout }>({});
 
-    const handleStatusChange = (id: number, field: keyof Status, value: any) => {
-        setStatuses(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+    const handleStatusChange = async (id: number, field: keyof Status, value: any, immediate: boolean = false) => {
+        const status = statuses.find(s => s.id === id);
+        if (!status) return;
+
+        // Update local state immediately
+        setEditingStatuses(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+
+        if (immediate) {
+            // Update immediately (for toggles, color changes)
+            const updatedStatus = { ...status, [field]: value };
+            try {
+                await updateStatus(updatedStatus);
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        } else {
+            // Debounce for text inputs
+            if (updateTimeouts[id]) {
+                clearTimeout(updateTimeouts[id]);
+            }
+            
+            const timeout = setTimeout(async () => {
+                const updatedStatus = { ...status, [field]: value };
+                try {
+                    await updateStatus(updatedStatus);
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                }
+            }, 500);
+            
+            setUpdateTimeouts(prev => ({ ...prev, [id]: timeout }));
+        }
     };
 
-    const handleAddStatus = () => {
-        const newStatus: Status = {
-            id: Date.now(),
-            name: '',
-            description: '',
-            category: 'Active',
-            color: '#808080', // default gray
-            isDefault: false,
-            isHidden: false,
-        };
-        setStatuses(prev => [...prev, newStatus]);
+    const handleAddStatus = async () => {
+        try {
+            await addStatus({
+                name: '',
+                description: '',
+                category: 'Active',
+                color: '#808080',
+                isDefault: false,
+                isHidden: false,
+            });
+        } catch (error) {
+            console.error('Error adding status:', error);
+        }
     };
 
     const handleDeleteStatus = (id: number) => {
-        setStatuses(prev => prev.filter(s => s.id !== id));
+        const status = statuses.find(s => s.id === id);
+        if (!status) return;
+        
+        if (status.isDefault) {
+            alert(t('cannotDeleteDefault') || 'Cannot delete default status');
+            return;
+        }
+        
+        setConfirmDeleteConfig({
+            title: t('deleteStatus') || 'Delete Status',
+            message: t('confirmDeleteStatus') || 'Are you sure you want to delete',
+            itemName: status.name,
+            onConfirm: async () => {
+                try {
+                    await deleteStatus(id);
+                } catch (error) {
+                    console.error('Error deleting status:', error);
+                    throw error;
+                }
+            },
+        });
+        setIsConfirmDeleteModalOpen(true);
     };
 
     return (
@@ -67,7 +120,7 @@ export const StatusesSettings = () => {
                         <Select id="default-status" value={defaultStatus} onChange={(e) => setDefaultStatus(e.target.value)}>
                             {statuses.map(s => <option key={s.id}>{s.name}</option>)}
                         </Select>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('defaultActiveStatusDesc')}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{t('defaultActiveStatusDesc')}</p>
                      </div>
                  </div>
             </Card>
@@ -75,11 +128,11 @@ export const StatusesSettings = () => {
             <Card>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold">{t('availableStatuses')}</h2>
-                    <Button onClick={handleAddStatus}><PlusIcon className="w-4 h-4" /> {t('addStatus')}</Button>
+                    <Button onClick={() => handleAddStatus()}><PlusIcon className="w-4 h-4" /> {t('addStatus')}</Button>
                 </div>
                  <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead className="text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                        <thead className="text-left rtl:text-right text-gray-700 dark:text-gray-300">
                             <tr>
                                 <th className="p-2 min-w-[200px]">{t('name')}</th>
                                 <th className="p-2 min-w-[250px]">{t('description')}</th>
@@ -94,13 +147,13 @@ export const StatusesSettings = () => {
                                         <div className="flex items-center gap-2">
                                             <input
                                                 type="color"
-                                                value={status.color}
-                                                onChange={(e) => handleStatusChange(status.id, 'color', e.target.value)}
+                                                value={editingStatuses[status.id]?.color !== undefined ? editingStatuses[status.id].color : status.color}
+                                                onChange={(e) => handleStatusChange(status.id, 'color', e.target.value, true)}
                                                 className="w-8 h-8 p-0 border-none bg-transparent rounded-md cursor-pointer"
                                             />
                                             <Input
-                                                value={status.name}
-                                                onChange={(e) => handleStatusChange(status.id, 'name', e.target.value)}
+                                                value={editingStatuses[status.id]?.name !== undefined ? editingStatuses[status.id].name : status.name}
+                                                onChange={(e) => handleStatusChange(status.id, 'name', e.target.value, false)}
                                                 className="text-sm"
                                             />
                                             {status.isDefault && <span className="text-xs whitespace-nowrap font-semibold px-2 py-0.5 rounded-full bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200">Default</span>}
@@ -108,16 +161,16 @@ export const StatusesSettings = () => {
                                     </td>
                                     <td className="p-2">
                                          <Input
-                                            value={status.description}
-                                            onChange={(e) => handleStatusChange(status.id, 'description', e.target.value)}
+                                            value={editingStatuses[status.id]?.description !== undefined ? editingStatuses[status.id].description : status.description}
+                                            onChange={(e) => handleStatusChange(status.id, 'description', e.target.value, false)}
                                             className="text-sm"
                                         />
                                     </td>
                                     <td className="p-2">
                                         <Select
                                             id={`category-${status.id}`}
-                                            value={status.category}
-                                            onChange={(e) => handleStatusChange(status.id, 'category', e.target.value as Status['category'])}
+                                            value={editingStatuses[status.id]?.category || status.category}
+                                            onChange={(e) => handleStatusChange(status.id, 'category', e.target.value as Status['category'], true)}
                                             className="text-sm"
                                         >
                                             <option value="Active">{t('active')}</option>
@@ -128,7 +181,7 @@ export const StatusesSettings = () => {
                                     </td>
                                     <td className="p-2">
                                         <div className="flex items-center gap-1">
-                                            <Button variant="ghost" className="p-1 h-auto !text-gray-700 dark:!text-gray-300" onClick={() => handleStatusChange(status.id, 'isHidden', !status.isHidden)}>
+                                            <Button variant="ghost" className="p-1 h-auto !text-gray-700 dark:!text-gray-300" onClick={() => handleStatusChange(status.id, 'isHidden', !status.isHidden, true)}>
                                                 {status.isHidden ? <EyeOffIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
                                             </Button>
                                             <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" disabled={status.isDefault} onClick={() => handleDeleteStatus(status.id)}>

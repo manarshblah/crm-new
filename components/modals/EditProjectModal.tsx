@@ -51,15 +51,20 @@ export const EditProjectModal = () => {
         setFormState(prev => ({ ...prev, [id]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (editingProject) {
-            updateProject({
-                ...editingProject,
-                ...formState,
-            });
+            try {
+                await updateProject({
+                    ...editingProject,
+                    ...formState,
+                });
+                handleClose();
+            } catch (error) {
+                console.error('Error updating project:', error);
+                // يمكن إضافة toast notification هنا
+            }
         }
-        handleClose();
     };
 
     if (!editingProject) return null;

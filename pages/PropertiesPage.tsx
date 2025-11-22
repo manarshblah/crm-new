@@ -1,8 +1,8 @@
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Dropdown, DropdownItem, Loader } from '../components/index';
+import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Dropdown, DropdownItem, Loader, EditIcon, TrashIcon } from '../components/index';
 import { Developer, Project, Unit } from '../types';
 
 type Tab = 'units' | 'projects' | 'developers';
@@ -17,7 +17,6 @@ const DevelopersTable = ({ developers, onUpdate, onDelete }: { developers: Devel
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
                                 <th scope="col" className="px-3 sm:px-6 py-3">{t('code')}</th>
-                                <th scope="col" className="px-3 sm:px-6 py-3">{t('logo')}</th>
                                 <th scope="col" className="px-3 sm:px-6 py-3">{t('name')}</th>
                                 <th scope="col" className="px-3 sm:px-6 py-3">{t('actions')}</th>
                             </tr>
@@ -26,12 +25,15 @@ const DevelopersTable = ({ developers, onUpdate, onDelete }: { developers: Devel
                             {developers.map(dev => (
                                 <tr key={dev.id} className="bg-white dark:bg-dark-card border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">{dev.code}</td>
-                                    <td className="px-3 sm:px-6 py-4"><img src={dev.logo} alt={dev.name} className="w-8 h-8 rounded-full object-cover" /></td>
                                     <td className="px-3 sm:px-6 py-4 font-medium text-gray-900 dark:text-white text-xs sm:text-sm">{dev.name}</td>
                                     <td className="px-3 sm:px-6 py-4">
-                                        <div className="flex gap-1 sm:gap-2 flex-wrap">
-                                            <Button variant="secondary" onClick={() => onUpdate(dev)} className="text-xs sm:text-sm">{t('update')}</Button>
-                                            <Button variant="danger" onClick={() => onDelete(dev.id)} className="text-xs sm:text-sm">{t('delete')}</Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" className="p-1 h-auto" onClick={() => onUpdate(dev)}>
+                                                <EditIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(dev.id)}>
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -72,9 +74,13 @@ const ProjectsTable = ({ projects, onUpdate, onDelete }: { projects: Project[], 
                                     <td className="px-3 sm:px-6 py-4 hidden lg:table-cell text-xs sm:text-sm">{proj.city}</td>
                                     <td className="px-3 sm:px-6 py-4 hidden md:table-cell text-xs sm:text-sm">{proj.paymentMethod}</td>
                                     <td className="px-3 sm:px-6 py-4">
-                                        <div className="flex gap-1 sm:gap-2 flex-wrap">
-                                            <Button variant="secondary" onClick={() => onUpdate(proj)} className="text-xs sm:text-sm">{t('update')}</Button>
-                                            <Button variant="danger" onClick={() => onDelete(proj.id)} className="text-xs sm:text-sm">{t('delete')}</Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" className="p-1 h-auto" onClick={() => onUpdate(proj)}>
+                                                <EditIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(proj.id)}>
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -87,32 +93,61 @@ const ProjectsTable = ({ projects, onUpdate, onDelete }: { projects: Project[], 
     );
 }
 
-const UnitsTable = ({ units }: { units: Unit[] }) => {
+const UnitsTable = ({ units, onUpdate, onDelete }: { units: Unit[], onUpdate: (unit: Unit) => void, onDelete: (id: number) => void }) => {
     const { t } = useAppContext();
     return (
         <div className="overflow-x-auto -mx-4 sm:mx-0">
             <div className="min-w-full inline-block align-middle">
                 <div className="overflow-hidden">
-                    <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 min-w-[500px]">
+                    <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 min-w-[1200px]">
                         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
                                 <th scope="col" className="px-3 sm:px-6 py-3">{t('code')}</th>
                                 <th scope="col" className="px-3 sm:px-6 py-3">{t('project')}</th>
-                                <th scope="col" className="px-3 sm:px-6 py-3">{t('bedrooms')}</th>
+                                <th scope="col" className="px-3 sm:px-6 py-3 hidden md:table-cell">{t('bedrooms')}</th>
+                                <th scope="col" className="px-3 sm:px-6 py-3 hidden md:table-cell">{t('bathrooms')}</th>
                                 <th scope="col" className="px-3 sm:px-6 py-3">{t('price')}</th>
+                                <th scope="col" className="px-3 sm:px-6 py-3 hidden lg:table-cell">{t('type')}</th>
+                                <th scope="col" className="px-3 sm:px-6 py-3 hidden lg:table-cell">{t('finishing')}</th>
+                                <th scope="col" className="px-3 sm:px-6 py-3 hidden lg:table-cell">{t('city')}</th>
+                                <th scope="col" className="px-3 sm:px-6 py-3 hidden xl:table-cell">{t('district')}</th>
+                                <th scope="col" className="px-3 sm:px-6 py-3 hidden xl:table-cell">{t('zone')}</th>
+                                <th scope="col" className="px-3 sm:px-6 py-3 hidden md:table-cell">{t('status')}</th>
+                                <th scope="col" className="px-3 sm:px-6 py-3">{t('actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {units.length > 0 ? units.map(unit => (
-                                <tr key={unit.id} className="bg-white dark:bg-dark-card border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <tr key={`${unit.id}-${unit.project}`} className="bg-white dark:bg-dark-card border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">{unit.code}</td>
-                                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">{unit.project}</td>
-                                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">{unit.bedrooms}</td>
+                                    <td className="px-3 sm:px-6 py-4 font-medium text-gray-900 dark:text-white text-xs sm:text-sm">{unit.project}</td>
+                                    <td className="px-3 sm:px-6 py-4 hidden md:table-cell text-xs sm:text-sm">{unit.bedrooms}</td>
+                                    <td className="px-3 sm:px-6 py-4 hidden md:table-cell text-xs sm:text-sm">{unit.bathrooms}</td>
                                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">{unit.price.toLocaleString()}</td>
+                                    <td className="px-3 sm:px-6 py-4 hidden lg:table-cell text-xs sm:text-sm">{unit.type || '-'}</td>
+                                    <td className="px-3 sm:px-6 py-4 hidden lg:table-cell text-xs sm:text-sm">{unit.finishing || '-'}</td>
+                                    <td className="px-3 sm:px-6 py-4 hidden lg:table-cell text-xs sm:text-sm">{unit.city || '-'}</td>
+                                    <td className="px-3 sm:px-6 py-4 hidden xl:table-cell text-xs sm:text-sm">{unit.district || '-'}</td>
+                                    <td className="px-3 sm:px-6 py-4 hidden xl:table-cell text-xs sm:text-sm">{unit.zone || '-'}</td>
+                                    <td className="px-3 sm:px-6 py-4 hidden md:table-cell text-xs sm:text-sm">
+                                        <span className={`px-2 py-1 text-xs rounded-full ${unit.isSold ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}`}>
+                                            {unit.isSold ? t('sold') || 'Sold' : t('available') || 'Available'}
+                                        </span>
+                                    </td>
+                                    <td className="px-3 sm:px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" className="p-1 h-auto" onClick={() => onUpdate(unit)}>
+                                                <EditIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(unit.id)}>
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </td>
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={4} className="text-center py-10 text-xs sm:text-sm">{t('noUnitsFound')}</td>
+                                    <td colSpan={12} className="text-center py-10 text-xs sm:text-sm">{t('noUnitsFound')}</td>
                                 </tr>
                             )}
                         </tbody>
@@ -122,6 +157,7 @@ const UnitsTable = ({ units }: { units: Unit[] }) => {
         </div>
     );
 }
+
 export const PropertiesPage = () => {
     const { 
         t,
@@ -136,14 +172,41 @@ export const PropertiesPage = () => {
         deleteDeveloper,
         setEditingDeveloper,
         setIsEditDeveloperModalOpen,
+        setDeletingDeveloper,
+        setIsDeleteDeveloperModalOpen,
         deleteProject,
         setEditingProject,
-        setIsEditProjectModalOpen
+        setIsEditProjectModalOpen,
+        updateUnit,
+        deleteUnit,
+        setEditingUnit,
+        setIsEditUnitModalOpen,
+        setConfirmDeleteConfig,
+        setIsConfirmDeleteModalOpen
     } = useAppContext();
     const [activeTab, setActiveTab] = useState<Tab>('units');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // TODO: استدعي APIs لتحميل البيانات عند فتح الصفحة (لشركات العقارات فقط)
+        // مثال:
+        // const loadData = async () => {
+        //   try {
+        //     const [developersData, projectsData, unitsData] = await Promise.all([
+        //       getDevelopersAPI(),
+        //       getProjectsAPI(),
+        //       getUnitsAPI()
+        //     ]);
+        //     // TODO: استخدم setDevelopers, setProjects, setUnits من AppContext
+        //   } catch (error) {
+        //     console.error('Error loading data:', error);
+        //   } finally {
+        //     setLoading(false);
+        //   }
+        // };
+        // if (isRealEstate) loadData();
+        
+        // الكود الحالي (للاختبار فقط):
         const timer = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timer);
     }, []);
@@ -177,8 +240,10 @@ export const PropertiesPage = () => {
     );
 
     const handleDeleteDeveloper = (id: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            deleteDeveloper(id);
+        const developer = developers.find(d => d.id === id);
+        if (developer) {
+            setDeletingDeveloper(developer);
+            setIsDeleteDeveloperModalOpen(true);
         }
     };
 
@@ -188,8 +253,17 @@ export const PropertiesPage = () => {
     };
     
     const handleDeleteProject = (id: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            deleteProject(id);
+        const project = projects.find(p => p.id === id);
+        if (project) {
+            setConfirmDeleteConfig({
+                title: t('deleteProject') || 'Delete Project',
+                message: t('confirmDeleteProject') || 'Are you sure you want to delete',
+                itemName: project.name,
+                onConfirm: async () => {
+                    await deleteProject(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 
@@ -197,6 +271,29 @@ export const PropertiesPage = () => {
         setEditingProject(proj);
         setIsEditProjectModalOpen(true);
     };
+
+    const handleUpdateUnit = (unit: Unit) => {
+        setEditingUnit(unit);
+        setIsEditUnitModalOpen(true);
+    };
+
+    const handleDeleteUnit = (id: number) => {
+        const unit = units.find(u => u.id === id);
+        if (unit) {
+            setConfirmDeleteConfig({
+                title: t('deleteUnit') || 'Delete Unit',
+                message: t('confirmDeleteUnit') || 'Are you sure you want to delete',
+                itemName: unit.code,
+                onConfirm: async () => {
+                    await deleteUnit(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
+        }
+    };
+
+    // استخدام useMemo لضمان إعادة التصيير عند تغيير units
+    const memoizedUnits = useMemo(() => units, [units]);
 
     const renderContent = () => {
         switch (activeTab) {
@@ -209,7 +306,7 @@ export const PropertiesPage = () => {
                                 <FilterIcon className="w-4 h-4"/> <span className="hidden sm:inline">{t('filter')}</span>
                              </Button>
                         </div>
-                        <UnitsTable units={units} />
+                        <UnitsTable units={memoizedUnits} onUpdate={handleUpdateUnit} onDelete={handleDeleteUnit} />
                     </Card>
                 );
             case 'projects':

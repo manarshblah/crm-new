@@ -39,37 +39,42 @@ export interface TimelineEntry {
   action: string;
   details: string;
   date: string;
+  stage?: string; // Optional: formatted stage name for better display
+}
+
+export interface ClientTask {
+  id: number;
+  clientId: number;
+  stage: string;
+  notes: string;
+  reminderDate: string | null;
+  createdBy: number;
+  createdAt: string;
 }
 
 export interface Lead {
   id: number;
   name: string;
   phone: string;
-  phone2?: string;
-  lastFeedback: string;
-  notes: string;
-  lastStage: string;
-  reminder: string;
   status: 'Untouched' | 'Touched' | 'Following' | 'Meeting' | 'No Answer' | 'Out Of Service' | 'All';
   type: 'Fresh' | 'Cold' | 'My' | 'Rotated' | 'All';
   assignedTo: number; // User ID
   budget: number;
-  authority: string;
   communicationWay: string;
   priority: 'High' | 'Medium' | 'Low';
-  channel: string;
   createdAt: string;
-  history: TimelineEntry[];
+  // Computed fields (not in API, calculated from ClientTasks)
+  lastFeedback?: string; // From last ClientTask notes
+  notes?: string; // From last ClientTask notes
+  lastStage?: string; // From last ClientTask stage or status
 }
 
 export interface Deal {
   id: number;
   clientName: string;
-  unit: string;
   paymentMethod: string;
   status: string;
   value: number;
-  project?: string;
   leadId?: number;
   startedBy?: number; // user ID
   closedBy?: number; // user ID
@@ -80,20 +85,39 @@ export interface Deal {
   salesCommissionPercentage?: number;
   salesCommissionAmount?: number;
   description?: string;
+  // Real estate specific fields (only for real_estate specialization)
+  unit?: string;
+  project?: string;
 }
+
+// TaskStage enum values matching API TaskStage enum
+export type TaskStage = 
+  | 'following'
+  | 'meeting'
+  | 'done_meeting'
+  | 'follow_after_meeting'
+  | 'reschedule_meeting'
+  | 'cancellation'
+  | 'no_answer'
+  | 'out_of_service'
+  | 'not_interested'
+  | 'whatsapp_pending'
+  | 'hold'
+  | 'broker'
+  | 'resale';
 
 export interface Activity {
   id: number;
   user: string;
   lead: string;
-  type: 'Call' | 'Meeting' | 'Whatsapp' | 'Note';
+  stage: TaskStage; // Changed from 'type' to 'stage' to match API
   date: string;
   notes: string;
 }
 
 export interface Todo {
   id: number;
-  type: 'Hold Reminder' | 'Meeting' | 'Call';
+  stage: TaskStage; // Changed from 'type' to 'stage' to match API
   leadName: string;
   leadPhone: string;
   dueDate: string;
@@ -111,7 +135,6 @@ export interface Campaign {
 export interface Developer {
   id: number;
   code: string;
-  logo: string;
   name: string;
 }
 
@@ -177,7 +200,6 @@ export interface ServiceProvider {
   id: number;
   code: string;
   name: string;
-  logo: string;
   phone: string;
   email: string;
   specialization: string;

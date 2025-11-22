@@ -4,6 +4,7 @@ import { useAppContext } from '../../context/AppContext';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
 import { Button } from '../Button';
+import { formatDateToLocal } from '../../utils/dateUtils';
 
 // FIX: Made children optional to fix missing children prop error.
 const Label = ({ children, htmlFor }: { children?: React.ReactNode; htmlFor: string }) => (
@@ -16,7 +17,7 @@ export const AddCampaignModal = () => {
         name: '',
         code: '',
         budget: '',
-        createdAt: new Date().toISOString().split('T')[0],
+        createdAt: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD format in local timezone
         isActive: true,
     });
 
@@ -28,19 +29,30 @@ export const AddCampaignModal = () => {
         }));
     };
     
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        addCampaign({
-            ...formState,
-            budget: Number(formState.budget)
-        });
-        setIsAddCampaignModalOpen(false);
-        // Reset form
-        setFormState({
-            name: '', code: '', budget: '',
-            createdAt: new Date().toISOString().split('T')[0],
-            isActive: true,
-        });
+        if (!formState.name || formState.name.trim() === '') {
+            alert('Please enter campaign name');
+            return;
+        }
+        try {
+            await addCampaign({
+                name: formState.name.trim(),
+                budget: Number(formState.budget) || 0,
+                isActive: formState.isActive,
+            });
+            setIsAddCampaignModalOpen(false);
+            // Reset form
+            setFormState({
+                name: '', code: '', budget: '',
+                createdAt: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD format in local timezone
+                isActive: true,
+            });
+        } catch (error: any) {
+            console.error('Error creating campaign:', error);
+            const errorMessage = error?.message || 'Failed to create campaign. Please try again.';
+            alert(errorMessage);
+        }
     };
 
     return (
@@ -51,20 +63,12 @@ export const AddCampaignModal = () => {
                     <Input id="name" placeholder={t('enterCampaignName')} value={formState.name} onChange={handleChange} />
                 </div>
                  <div>
-                    <Label htmlFor="code">{t('code')}</Label>
-                    <Input id="code" placeholder={t('enterCampaignCode')} value={formState.code} onChange={handleChange} />
-                </div>
-                 <div>
                     <Label htmlFor="budget">{t('budget')}</Label>
                     <Input id="budget" type="number" placeholder={t('enterCampaignBudget')} value={formState.budget} onChange={handleChange} />
                 </div>
-                <div>
-                    <Label htmlFor="createdAt">{t('createdAt')}</Label>
-                    <Input id="createdAt" type="date" value={formState.createdAt} onChange={handleChange} />
-                </div>
                 <div className="flex items-center gap-2">
                     <input id="isActive" type="checkbox" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" checked={formState.isActive} onChange={handleChange} />
-                    <label htmlFor="isActive" className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('active')}</label>
+                    <label htmlFor="isActive" className="text-sm font-medium text-secondary">{t('active')}</label>
                 </div>
                 <div className="flex justify-end">
                     <Button type="submit">{t('submit')}</Button>

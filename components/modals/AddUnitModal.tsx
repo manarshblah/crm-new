@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Modal } from '../Modal';
 import { Input } from '../Input';
@@ -20,7 +20,7 @@ const Select = ({ id, children, value, onChange }: { id: string; children?: Reac
 export const AddUnitModal = () => {
     const { isAddUnitModalOpen, setIsAddUnitModalOpen, t, addUnit, projects } = useAppContext();
     const [formState, setFormState] = useState({
-        project: projects[0]?.name || '',
+        project: '',
         bedrooms: '1',
         price: '',
         bathrooms: '1',
@@ -31,36 +31,81 @@ export const AddUnitModal = () => {
         zone: '',
     });
 
+    // تحديث project عند فتح الـ modal أو عند تحميل projects
+    useEffect(() => {
+        if (isAddUnitModalOpen && projects.length > 0) {
+            setFormState(prev => {
+                // إذا كان project فارغ، اختر الأول
+                if (!prev.project) {
+                    return { ...prev, project: projects[0].name };
+                }
+                return prev;
+            });
+        }
+    }, [isAddUnitModalOpen, projects]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
         setFormState(prev => ({ ...prev, [id]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        addUnit({
-            ...formState,
-            bedrooms: Number(formState.bedrooms),
-            price: Number(formState.price),
-            bathrooms: Number(formState.bathrooms),
-        });
+        
+        // التحقق من أن الحقول المطلوبة مملوءة
+        if (!formState.project) {
+            alert(t('project') + ' is required');
+            return;
+        }
+        
+        if (!formState.price || Number(formState.price) <= 0) {
+            alert(t('price') + ' is required and must be greater than 0');
+            return;
+        }
+        
+        if (projects.length === 0) {
+            alert('No projects available. Please add a project first.');
+            return;
+        }
+        
+        try {
+            await addUnit({
+                ...formState,
+                bedrooms: Number(formState.bedrooms),
+                price: Number(formState.price),
+                bathrooms: Number(formState.bathrooms),
+            });
+            handleClose();
+        } catch (error: any) {
+            console.error('Error adding unit:', error);
+            alert(error?.message || 'Failed to add unit. Please try again.');
+        }
+    };
+
+    const handleClose = () => {
         setIsAddUnitModalOpen(false);
-        // Reset form
+        // Reset form عند الإغلاق
         setFormState({
-            project: projects[0]?.name || '',
-            bedrooms: '1', price: '', bathrooms: '1', type: 'Apartment',
-            finishing: 'Finished', city: '', district: '', zone: '',
+            project: '',
+            bedrooms: '1',
+            price: '',
+            bathrooms: '1',
+            type: 'Apartment',
+            finishing: 'Finished',
+            city: '',
+            district: '',
+            zone: '',
         });
     };
 
     return (
-        <Modal isOpen={isAddUnitModalOpen} onClose={() => setIsAddUnitModalOpen(false)} title={t('addNewUnit')}>
+        <Modal isOpen={isAddUnitModalOpen} onClose={handleClose} title={t('addNewUnit')}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <Label htmlFor="project">{t('project')}</Label>
                         <Select id="project" value={formState.project} onChange={handleChange}>
-                            <option disabled value="">{t('selectProject')}</option>
+                            <option value="">{t('selectProject') || 'Select Project'}</option>
                             {projects.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
                         </Select>
                     </div>

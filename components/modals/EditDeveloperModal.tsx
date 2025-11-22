@@ -15,14 +15,12 @@ export const EditDeveloperModal = () => {
     const { isEditDeveloperModalOpen, setIsEditDeveloperModalOpen, t, updateDeveloper, editingDeveloper, setEditingDeveloper } = useAppContext();
     const [formState, setFormState] = useState<Omit<Developer, 'id' | 'code'>>({
         name: '',
-        logo: '',
     });
 
     useEffect(() => {
         if (editingDeveloper) {
             setFormState({
                 name: editingDeveloper.name,
-                logo: editingDeveloper.logo,
             });
         }
     }, [editingDeveloper]);
@@ -37,15 +35,19 @@ export const EditDeveloperModal = () => {
         setFormState(prev => ({ ...prev, [id]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (editingDeveloper) {
-            updateDeveloper({
-                ...editingDeveloper,
-                ...formState,
-            });
+            try {
+                await updateDeveloper({
+                    ...editingDeveloper,
+                    ...formState,
+                });
+                handleClose();
+            } catch (error) {
+                console.error('Error updating developer:', error);
+            }
         }
-        handleClose();
     };
 
     if (!editingDeveloper) return null;
@@ -56,10 +58,6 @@ export const EditDeveloperModal = () => {
                 <div>
                     <Label htmlFor="name">{t('developerName')}</Label>
                     <Input id="name" placeholder={t('enterDeveloperName')} value={formState.name} onChange={handleChange} />
-                </div>
-                 <div>
-                    <Label htmlFor="logo">{t('logo')}</Label>
-                    <Input id="logo" placeholder="Enter image URL" value={formState.logo} onChange={handleChange} />
                 </div>
                 <div className="flex justify-end gap-2">
                     <Button type="button" variant="secondary" onClick={handleClose}>{t('cancel')}</Button>

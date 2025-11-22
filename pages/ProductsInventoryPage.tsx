@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Loader } from '../components/index';
+import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Loader, EditIcon, TrashIcon } from '../components/index';
 import { Product, ProductCategory, Supplier } from '../types';
 
 type Tab = 'products' | 'categories' | 'suppliers';
@@ -46,9 +46,13 @@ const ProductsTable = ({ products, onUpdate, onDelete }: { products: Product[], 
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-6 py-4">
-                                        <div className="flex gap-1 sm:gap-2 flex-wrap">
-                                            <Button variant="secondary" onClick={() => onUpdate(product)} className="text-xs sm:text-sm">{t('update')}</Button>
-                                            <Button variant="danger" onClick={() => onDelete(product.id)} className="text-xs sm:text-sm">{t('delete')}</Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" className="p-1 h-auto" onClick={() => onUpdate(product)}>
+                                                <EditIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(product.id)}>
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -83,9 +87,13 @@ const CategoriesTable = ({ categories, onUpdate, onDelete }: { categories: Produ
                                     <td className="px-3 sm:px-6 py-4 font-medium text-gray-900 dark:text-white text-xs sm:text-sm">{category.name}</td>
                                     <td className="px-3 sm:px-6 py-4 hidden md:table-cell text-xs sm:text-sm max-w-xs truncate">{category.description}</td>
                                     <td className="px-3 sm:px-6 py-4">
-                                        <div className="flex gap-1 sm:gap-2 flex-wrap">
-                                            <Button variant="secondary" onClick={() => onUpdate(category)} className="text-xs sm:text-sm">{t('update')}</Button>
-                                            <Button variant="danger" onClick={() => onDelete(category.id)} className="text-xs sm:text-sm">{t('delete')}</Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" className="p-1 h-auto" onClick={() => onUpdate(category)}>
+                                                <EditIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(category.id)}>
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -128,9 +136,13 @@ const SuppliersTable = ({ suppliers, onUpdate, onDelete }: { suppliers: Supplier
                                     <td className="px-3 sm:px-6 py-4 hidden lg:table-cell text-xs sm:text-sm">{supplier.email}</td>
                                     <td className="px-3 sm:px-6 py-4 hidden md:table-cell text-xs sm:text-sm">{supplier.contactPerson}</td>
                                     <td className="px-3 sm:px-6 py-4">
-                                        <div className="flex gap-1 sm:gap-2 flex-wrap">
-                                            <Button variant="secondary" onClick={() => onUpdate(supplier)} className="text-xs sm:text-sm">{t('update')}</Button>
-                                            <Button variant="danger" onClick={() => onDelete(supplier.id)} className="text-xs sm:text-sm">{t('delete')}</Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" className="p-1 h-auto" onClick={() => onUpdate(supplier)}>
+                                                <EditIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(supplier.id)}>
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -153,6 +165,8 @@ export const ProductsInventoryPage = () => {
         deleteProduct,
         deleteProductCategory,
         deleteSupplier,
+        setConfirmDeleteConfig,
+        setIsConfirmDeleteModalOpen,
     } = useAppContext();
     const [activeTab, setActiveTab] = useState<Tab>('products');
     const [loading, setLoading] = useState(true);
@@ -179,8 +193,17 @@ export const ProductsInventoryPage = () => {
     }
 
     const handleDeleteProduct = (id: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            deleteProduct(id);
+        const product = products.find(p => p.id === id);
+        if (product) {
+            setConfirmDeleteConfig({
+                title: t('deleteProduct') || 'Delete Product',
+                message: t('confirmDeleteProduct') || 'Are you sure you want to delete',
+                itemName: product.name,
+                onConfirm: async () => {
+                    await deleteProduct(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 
@@ -190,8 +213,17 @@ export const ProductsInventoryPage = () => {
     };
 
     const handleDeleteCategory = (id: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            deleteProductCategory(id);
+        const category = productCategories.find(c => c.id === id);
+        if (category) {
+            setConfirmDeleteConfig({
+                title: t('deleteProductCategory') || 'Delete Product Category',
+                message: t('confirmDeleteProductCategory') || 'Are you sure you want to delete',
+                itemName: category.name,
+                onConfirm: async () => {
+                    await deleteProductCategory(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 
@@ -201,8 +233,17 @@ export const ProductsInventoryPage = () => {
     };
 
     const handleDeleteSupplier = (id: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            deleteSupplier(id);
+        const supplier = suppliers.find(s => s.id === id);
+        if (supplier) {
+            setConfirmDeleteConfig({
+                title: t('deleteSupplier') || 'Delete Supplier',
+                message: t('confirmDeleteSupplier') || 'Are you sure you want to delete',
+                itemName: supplier.name,
+                onConfirm: async () => {
+                    await deleteSupplier(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 
@@ -238,9 +279,9 @@ export const ProductsInventoryPage = () => {
         <PageWrapper title={t('products')}>
             <div className="border-b border-gray-200 dark:border-gray-700 mb-4 overflow-x-auto">
                 <nav className="-mb-px flex space-x-4 rtl:space-x-reverse min-w-max" aria-label="Tabs">
-                    <button onClick={() => setActiveTab('products')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'products' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>{t('products')}</button>
-                    <button onClick={() => setActiveTab('categories')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'categories' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>{t('productCategories')}</button>
-                    <button onClick={() => setActiveTab('suppliers')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'suppliers' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>{t('suppliers')}</button>
+                    <button onClick={() => setActiveTab('products')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'products' ? 'border-primary text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-300'}`}>{t('products')}</button>
+                    <button onClick={() => setActiveTab('categories')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'categories' ? 'border-primary text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-300'}`}>{t('productCategories')}</button>
+                    <button onClick={() => setActiveTab('suppliers')} className={`whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex-shrink-0 ${activeTab === 'suppliers' ? 'border-primary text-gray-900 dark:text-gray-100' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-300'}`}>{t('suppliers')}</button>
                 </nav>
             </div>
             {renderContent()}

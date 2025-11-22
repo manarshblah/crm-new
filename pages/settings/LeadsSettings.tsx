@@ -7,6 +7,24 @@ import { useAppContext } from '../../context/AppContext';
 export const LeadsSettings = () => {
     const { t } = useAppContext();
     const [autoRotate, setAutoRotate] = useState(false);
+    const [delayTime, setDelayTime] = useState('30');
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSaveSettings = async () => {
+        setIsSaving(true);
+        try {
+            // TODO: Save settings to API when backend is ready
+            // await saveLeadsSettingsAPI({ autoRotate, delayTime: parseInt(delayTime) });
+            
+            // For now, just show success message
+            alert(t('settingsSaved') || 'Settings saved successfully!');
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            alert(t('errorSavingSettings') || 'Error saving settings. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -16,19 +34,26 @@ export const LeadsSettings = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <h3 className="font-medium">{t('autoRotation')}</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{t('autoRotationDesc')}</p>
+                            <p className="text-sm text-tertiary">{t('autoRotationDesc')}</p>
                         </div>
                         <ToggleSwitch enabled={autoRotate} setEnabled={setAutoRotate} />
                     </div>
 
                     <div className="max-w-sm">
-                         <label htmlFor="delay-time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('reminderDelayTime')}</label>
-                         <Input id="delay-time" type="number" defaultValue="30" />
-                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('reminderDelayTimeDesc')}</p>
+                         <label htmlFor="delay-time" className="block text-sm font-medium text-secondary mb-1">{t('reminderDelayTime')}</label>
+                         <Input 
+                            id="delay-time" 
+                            type="number" 
+                            value={delayTime}
+                            onChange={(e) => setDelayTime(e.target.value)}
+                        />
+                         <p className="text-xs text-tertiary mt-1">{t('reminderDelayTimeDesc')}</p>
                     </div>
                 </div>
                  <div className="mt-6 flex justify-end">
-                    <Button>{t('saveSettings')}</Button>
+                    <Button onClick={handleSaveSettings} disabled={isSaving}>
+                        {isSaving ? t('saving') || 'Saving...' : t('saveSettings')}
+                    </Button>
                 </div>
             </Card>
         </div>

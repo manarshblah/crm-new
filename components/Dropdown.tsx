@@ -1,6 +1,7 @@
 
 
 import React, { useState, useRef, useEffect, ReactNode } from 'react';
+import { useAppContext } from '../context/AppContext';
 
 // FIX: Made children optional to fix missing children prop error.
 type DropdownProps = {
@@ -9,6 +10,7 @@ type DropdownProps = {
 };
 
 export const Dropdown = ({ trigger, children }: DropdownProps) => {
+    const { language } = useAppContext();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +33,7 @@ export const Dropdown = ({ trigger, children }: DropdownProps) => {
             </div>
             {isOpen && (
                 <div 
-                    className="origin-top-right rtl:origin-top-left absolute end-0 mt-2 w-56 rounded-md shadow-lg bg-card dark:bg-dark-card ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                    className={`origin-top-right rtl:origin-top-left absolute ${language === 'ar' ? 'left-0' : 'right-0'} mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-20`}
                     onClick={() => setIsOpen(false)}
                 >
                     <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
@@ -49,13 +51,16 @@ type DropdownItemProps = {
     onClick: () => void;
 };
 
-export const DropdownItem = ({ children, onClick }: DropdownItemProps) => (
-    <a
-        href="#"
-        onClick={(e) => { e.preventDefault(); onClick(); }}
-        className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-        role="menuitem"
-    >
-        {children}
-    </a>
-);
+export const DropdownItem = ({ children, onClick }: DropdownItemProps) => {
+    const { language } = useAppContext();
+    return (
+        <a
+            href="#"
+            onClick={(e) => { e.preventDefault(); onClick(); }}
+            className={`block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 text-left rtl:text-right`}
+            role="menuitem"
+        >
+            {children}
+        </a>
+    );
+};

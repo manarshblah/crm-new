@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { MOCK_USERS, MOCK_PROJECTS, MOCK_CAMPAIGNS } from '../../constants';
 import { XIcon } from '../icons';
 import { Button } from '../Button';
 
@@ -26,19 +25,26 @@ const FilterLabel = ({ children, htmlFor }: { children?: React.ReactNode; htmlFo
 );
 
 // FIX: Made children optional to fix missing children prop error.
-const FilterSelect = ({ id, children }: { id: string; children?: React.ReactNode }) => (
-    <select id={id} className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-        {children}
-    </select>
-);
+const FilterSelect = ({ id, children }: { id: string; children?: React.ReactNode }) => {
+    const { language } = useAppContext();
+    return (
+        <select id={id} dir={language === 'ar' ? 'rtl' : 'ltr'} className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+            {children}
+        </select>
+    );
+};
 
-const FilterInput = ({ id, type = 'text', placeholder }: { id: string; type?: string; placeholder?: string }) => (
-    <input type={type} id={id} placeholder={placeholder} className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" />
-);
+const FilterInput = ({ id, type = 'text', placeholder }: { id: string; type?: string; placeholder?: string }) => {
+    const { language } = useAppContext();
+    return (
+        <input type={type} id={id} placeholder={placeholder} dir={language === 'ar' ? 'rtl' : 'ltr'} className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" />
+    );
+};
 
 
 export const DealsFilterDrawer = () => {
-    const { isDealsFilterDrawerOpen, setIsDealsFilterDrawerOpen, t } = useAppContext();
+    const { isDealsFilterDrawerOpen, setIsDealsFilterDrawerOpen, t, currentUser, projects, users, campaigns } = useAppContext();
+    const isRealEstate = currentUser?.company?.specialization === 'real_estate';
 
     return (
         <>
@@ -57,21 +63,21 @@ export const DealsFilterDrawer = () => {
                                 <FilterLabel htmlFor="started-by">{t('startedBy')}</FilterLabel>
                                 <FilterSelect id="started-by">
                                     <option>{t('selectUser')}</option>
-                                    {MOCK_USERS.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
+                                    {users.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
                                 </FilterSelect>
                             </div>
                             <div>
                                 <FilterLabel htmlFor="closed-by">{t('closedBy')}</FilterLabel>
                                 <FilterSelect id="closed-by">
                                     <option>{t('selectUser')}</option>
-                                    {MOCK_USERS.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
+                                    {users.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
                                 </FilterSelect>
                             </div>
                             <div>
                                 <FilterLabel htmlFor="added-by">{t('addedBy')}</FilterLabel>
                                 <FilterSelect id="added-by">
                                     <option>{t('selectUser')}</option>
-                                    {MOCK_USERS.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
+                                    {users.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
                                 </FilterSelect>
                             </div>
                         </div>
@@ -81,14 +87,18 @@ export const DealsFilterDrawer = () => {
                         <div className="space-y-4 pt-2">
                              <div><FilterLabel htmlFor="deal-status">{t('status')}</FilterLabel><FilterSelect id="deal-status"><option>{t('selectStatus')}</option><option>{t('reservation')}</option><option>{t('contracted')}</option><option>{t('closed')}</option></FilterSelect></div>
                              <div><FilterLabel htmlFor="payment-method">{t('paymentMethod')}</FilterLabel><FilterSelect id="payment-method"><option>{t('selectMethod')}</option><option>{t('cash')}</option><option>{t('installment')}</option></FilterSelect></div>
-                             <div>
-                                <FilterLabel htmlFor="deal-project">{t('project')}</FilterLabel>
-                                <FilterSelect id="deal-project">
-                                    <option>{t('selectProject')}</option>
-                                    {MOCK_PROJECTS.map(p => <option key={p.id}>{p.name}</option>)}
-                                </FilterSelect>
-                            </div>
-                             <div><FilterLabel htmlFor="deal-unit">{t('unit')}</FilterLabel><FilterSelect id="deal-unit"><option>{t('selectUnit')}</option></FilterSelect></div>
+                             {isRealEstate && (
+                                <>
+                                    <div>
+                                        <FilterLabel htmlFor="deal-project">{t('project')}</FilterLabel>
+                                        <FilterSelect id="deal-project">
+                                            <option>{t('selectProject')}</option>
+                                            {projects.map(p => <option key={p.id}>{p.name}</option>)}
+                                        </FilterSelect>
+                                    </div>
+                                    <div><FilterLabel htmlFor="deal-unit">{t('unit')}</FilterLabel><FilterSelect id="deal-unit"><option>{t('selectUnit')}</option></FilterSelect></div>
+                                </>
+                             )}
                         </div>
                     </FilterSection>
 
@@ -99,7 +109,7 @@ export const DealsFilterDrawer = () => {
                                 <FilterLabel htmlFor="lead-campaign">{t('leadCampaign')}</FilterLabel>
                                 <FilterSelect id="lead-campaign">
                                     <option>{t('selectCampaign')}</option>
-                                     {MOCK_CAMPAIGNS.map(c => <option key={c.id}>{c.name}</option>)}
+                                     {campaigns.map(c => <option key={c.id}>{c.name}</option>)}
                                 </FilterSelect>
                             </div>
                         </div>

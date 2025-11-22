@@ -1,35 +1,221 @@
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
-// FIX: Corrected component import path to avoid conflict with `components.tsx`.
-import { Card, PageWrapper, WeekLeadsChart, TargetIcon, UsersIcon, Loader } from '../components/index';
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
-import { MOCK_USERS, MOCK_ACTIVITIES, MOCK_LEADS } from '../constants';
+import { Card, PageWrapper, TargetIcon, UsersIcon, Loader, DealIcon, CheckIcon } from '../components/index';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, Area, AreaChart } from 'recharts';
+import { getStageDisplayLabel } from '../utils/taskStageMapper';
 
 export const DashboardPage = () => {
-    const { t } = useAppContext();
-    const [loading, setLoading] = useState(true);
+    const { t, leads, activities, deals, todos, users, currentUser, language } = useAppContext();
+    const [loading, setLoading] = useState(false);
+
+    // Calculate statistics
+    const stats = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Today's new leads (created today)
+        const todayNewLeads = leads.filter(lead => {
+            const leadDate = new Date(lead.createdAt);
+            leadDate.setHours(0, 0, 0, 0);
+            return leadDate.getTime() === today.getTime();
+        }).length;
+        
+        // Today's touched leads (created today AND status is not Untouched)
+        const todayTouchedLeads = leads.filter(lead => {
+            const leadDate = new Date(lead.createdAt);
+            leadDate.setHours(0, 0, 0, 0);
+            return leadDate.getTime() === today.getTime() && lead.status !== 'Untouched';
+        }).length;
+        
+        // Today's untouched leads (created today AND status is Untouched)
+        const todayUntouchedLeads = leads.filter(lead => {
+            const leadDate = new Date(lead.createdAt);
+            leadDate.setHours(0, 0, 0, 0);
+            return leadDate.getTime() === today.getTime() && lead.status === 'Untouched';
+        }).length;
+        
+        // Delayed leads (created more than 3 days ago, untouched, and not assigned)
+        const threeDaysAgo = new Date(today);
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+        const delayedLeads = leads.filter(lead => {
+            const leadDate = new Date(lead.createdAt);
+            leadDate.setHours(0, 0, 0, 0);
+            const hasRecentActivity = activities.some(activity => {
+                const activityDate = new Date(activity.date);
+                activityDate.setHours(0, 0, 0, 0);
+                return activity.lead === lead.name && activityDate >= leadDate;
+            });
+            return leadDate < threeDaysAgo && !hasRecentActivity && lead.assignedTo === 0;
+        }).length;
+        
+        // Total leads
+        const totalLeads = leads.length;
+        
+        // Total deals
+        const totalDeals = deals.length;
+        
+        // Active todos
+        const activeTodos = todos.length;
+        
+        // Completed deals (Won)
+        const completedDeals = deals.filter(deal => deal.status === 'Won').length;
+        
+        return [
+            { 
+                title: t('todayNewLeads'), 
+                value: todayNewLeads, 
+                icon: <TargetIcon className="w-6 h-6"/>, 
+                gradient: 'from-red-500 to-pink-500',
+                bgColor: 'bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/30 dark:to-pink-950/30',
+                iconBg: 'bg-red-100 dark:bg-red-900/40',
+                textColor: 'text-red-600 dark:text-red-400'
+            },
+            { 
+                title: t('todayTouchedLeads'), 
+                value: todayTouchedLeads, 
+                icon: <UsersIcon className="w-6 h-6"/>, 
+                gradient: 'from-green-500 to-emerald-500',
+                bgColor: 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30',
+                iconBg: 'bg-green-100 dark:bg-green-900/40',
+                textColor: 'text-green-600 dark:text-green-400'
+            },
+            { 
+                title: t('todayUntouchedLeads'), 
+                value: todayUntouchedLeads, 
+                icon: <UsersIcon className="w-6 h-6"/>, 
+                gradient: 'from-amber-500 to-orange-500',
+                bgColor: 'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30',
+                iconBg: 'bg-amber-100 dark:bg-amber-900/40',
+                textColor: 'text-amber-600 dark:text-amber-400'
+            },
+            { 
+                title: t('delayedLeads'), 
+                value: delayedLeads, 
+                icon: <UsersIcon className="w-6 h-6"/>, 
+                gradient: 'from-purple-500 to-indigo-500',
+                bgColor: 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30',
+                iconBg: 'bg-purple-100 dark:bg-purple-900/40',
+                textColor: 'text-purple-600 dark:text-purple-400'
+            },
+            { 
+                title: t('totalLeads'), 
+                value: totalLeads, 
+                icon: <UsersIcon className="w-6 h-6"/>, 
+                gradient: 'from-blue-500 to-cyan-500',
+                bgColor: 'bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30',
+                iconBg: 'bg-blue-100 dark:bg-blue-900/40',
+                textColor: 'text-blue-600 dark:text-blue-400'
+            },
+            { 
+                title: t('totalDeals'), 
+                value: totalDeals, 
+                icon: <DealIcon className="w-6 h-6"/>, 
+                gradient: 'from-yellow-500 to-amber-500',
+                bgColor: 'bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30',
+                iconBg: 'bg-yellow-100 dark:bg-yellow-900/40',
+                textColor: 'text-yellow-600 dark:text-yellow-400'
+            },
+            { 
+                title: t('activeTodos'), 
+                value: activeTodos, 
+                icon: <CheckIcon className="w-6 h-6"/>, 
+                gradient: 'from-sky-500 to-blue-500',
+                bgColor: 'bg-gradient-to-br from-sky-50 to-blue-50 dark:from-sky-950/30 dark:to-blue-950/30',
+                iconBg: 'bg-sky-100 dark:bg-sky-900/40',
+                textColor: 'text-sky-600 dark:text-sky-400'
+            },
+            { 
+                title: t('completedDeals'), 
+                value: completedDeals, 
+                icon: <DealIcon className="w-6 h-6"/>, 
+                gradient: 'from-emerald-500 to-teal-500',
+                bgColor: 'bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30',
+                iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
+                textColor: 'text-emerald-600 dark:text-emerald-400'
+            },
+        ];
+    }, [leads, activities, deals, todos, t]);
+    
+    // Stages report data
+    const stagesData = useMemo(() => {
+        const stageCounts: { [key: string]: number } = {};
+        leads.forEach(lead => {
+            const stage = lead.lastStage || 'Untouched';
+            stageCounts[stage] = (stageCounts[stage] || 0) + 1;
+        });
+        
+        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+        return Object.entries(stageCounts).map(([name, value], index) => ({
+            name: getStageDisplayLabel(name.toLowerCase().replace(/\s+/g, '_') as any) || name,
+            value,
+            fill: colors[index % colors.length],
+        }));
+    }, [leads]);
+    
+    // Week leads chart data (last 7 days)
+    const weekLeadsData = useMemo(() => {
+        const data: { name: string; "Leads Count": number }[] = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const locale = language === 'ar' ? 'ar-SA' : 'en-US';
+            const dateStr = date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+            
+            const leadsCount = leads.filter(lead => {
+                const leadDate = new Date(lead.createdAt);
+                leadDate.setHours(0, 0, 0, 0);
+                return leadDate.getTime() === date.getTime();
+            }).length;
+            
+            data.push({ name: dateStr, "Leads Count": leadsCount });
+        }
+        
+        return data;
+    }, [leads, language]);
+    
+    // Top users (users with most activities)
+    const topUsers = useMemo(() => {
+        const userActivityCounts: { [userId: number]: number } = {};
+        activities.forEach(activity => {
+            const user = users.find(u => u.name === activity.user);
+            if (user) {
+                userActivityCounts[user.id] = (userActivityCounts[user.id] || 0) + 1;
+            }
+        });
+        
+        return users
+            .map(user => ({
+                ...user,
+                activityCount: userActivityCounts[user.id] || 0,
+            }))
+            .sort((a, b) => b.activityCount - a.activityCount)
+            .slice(0, 3);
+    }, [users, activities]);
+    
+    // Latest feedbacks (latest activities)
+    const latestFeedbacks = useMemo(() => {
+        return activities
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 5)
+            .map(activity => ({
+                id: activity.id,
+                date: activity.date,
+                user: activity.user,
+                lead: activity.lead,
+                stage: activity.stage,
+                notes: activity.notes,
+            }));
+    }, [activities]);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setLoading(false);
-        }, 1500); // Simulate 1.5s load time
-        return () => clearTimeout(timer);
+        // Data is already loaded from AppContext
+        setLoading(false);
     }, []);
-
-    const stats = [
-        { title: t('todayNewLeads'), value: 0, icon: <TargetIcon className="w-8 h-8 text-gray-900"/>, bgColor: 'bg-[#f9e8e8]' },
-        { title: t('todayTouchedLeads'), value: 0, icon: <UsersIcon className="w-8 h-8 text-gray-900"/>, bgColor: 'bg-[#e6f2e2]' },
-        { title: t('todayUntouchedLeads'), value: 0, icon: <UsersIcon className="w-8 h-8 text-gray-900"/>, bgColor: 'bg-[#f8f0e7]' },
-        { title: t('delayedLeads'), value: 1, icon: <UsersIcon className="w-8 h-8 text-gray-900"/>, bgColor: 'bg-[#f6f2fc]' },
-    ];
-    
-    // As per requirement, stages report shows no data.
-    const stagesData: any[] = [];
-
-    const topUsers = MOCK_USERS.slice(0, 3); // Get top 3 users for the list
-    const latestFeedbacks = MOCK_ACTIVITIES.slice(0, 4); // Get latest 4 feedbacks
 
     if (loading) {
         return (
@@ -43,103 +229,295 @@ export const DashboardPage = () => {
 
     return (
         <PageWrapper title={t('dashboard')}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
                 {stats.map(stat => (
-                    <div key={stat.title}>
-                        <Card className={`h-full ${stat.bgColor} text-gray-900`}>
-                            <div className="flex items-center gap-3 sm:gap-4">
-                                <div className="p-2 sm:p-3 bg-black/5 rounded-full flex-shrink-0">
-                                    {stat.icon}
+                    <div key={stat.title} className="group">
+                        <Card className={`h-full ${stat.bgColor} border border-gray-200/50 dark:border-gray-700/50 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-gray-300 dark:hover:border-gray-600 relative overflow-hidden`}>
+                            {/* Decorative gradient overlay */}
+                            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${stat.gradient} opacity-5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:opacity-10 transition-opacity`}></div>
+                            
+                            <div className="relative flex items-center gap-4">
+                                <div className={`p-3 ${stat.iconBg} rounded-xl flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+                                    <div className={stat.textColor}>
+                                        {stat.icon}
+                                    </div>
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-xs sm:text-sm text-gray-700 truncate">{stat.title}</p>
-                                    <p className="text-xl sm:text-2xl font-bold">{stat.value}</p>
+                                    <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium truncate mb-1.5">{stat.title}</p>
+                                    <p className={`text-3xl sm:text-4xl font-bold ${stat.textColor} leading-tight`}>{stat.value}</p>
                                 </div>
                             </div>
                         </Card>
                     </div>
                 ))}
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6">
-                <Card className="lg:col-span-2">
-                     <h2 className="text-base sm:text-lg font-semibold mb-4">{t('weekLeadsReport')}</h2>
-                     <div className="overflow-x-auto">
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <Card className="lg:col-span-2 border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow">
+                     <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                         <div>
+                             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('weekLeadsReport')}</h2>
+                             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('last7DaysPerformance')}</p>
+                         </div>
+                     </div>
+                     <div className="overflow-x-auto -mx-2 px-2">
                          <div className="min-w-[300px]">
-                             <WeekLeadsChart />
+                             <ResponsiveContainer width="100%" height={320}>
+                                 <AreaChart data={weekLeadsData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                                     <defs>
+                                         <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
+                                             <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                             <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                         </linearGradient>
+                                     </defs>
+                                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.3} />
+                                     <XAxis 
+                                         dataKey="name" 
+                                         stroke="#6b7280" 
+                                         tick={{ fill: '#6b7280', fontSize: 12 }}
+                                         axisLine={{ stroke: '#e5e7eb' }}
+                                     />
+                                     <YAxis 
+                                         stroke="#6b7280" 
+                                         tick={{ fill: '#6b7280', fontSize: 12 }}
+                                         axisLine={{ stroke: '#e5e7eb' }}
+                                     />
+                                     <Tooltip
+                                         contentStyle={{
+                                             backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                                             border: 'none',
+                                             borderRadius: '8px',
+                                             padding: '12px',
+                                             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                                         }}
+                                         labelStyle={{ color: '#9ca3af', marginBottom: '4px' }}
+                                         itemStyle={{ color: '#fff' }}
+                                     />
+                                     <Area 
+                                         type="monotone" 
+                                         dataKey="Leads Count" 
+                                         stroke="#3b82f6" 
+                                         strokeWidth={3}
+                                         fill="url(#colorLeads)"
+                                         activeDot={{ r: 6, fill: '#3b82f6' }}
+                                     />
+                                 </AreaChart>
+                             </ResponsiveContainer>
                          </div>
                      </div>
                 </Card>
-                <Card>
-                    <h2 className="text-base sm:text-lg font-semibold mb-4">{t('stagesReport')}</h2>
+                <Card className="border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('stagesReport')}</h2>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('distributionByStage')}</p>
+                        </div>
+                    </div>
                     {stagesData.length > 0 ? (
-                        <div className="h-[250px] sm:h-[300px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie data={stagesData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label>
-                                {stagesData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                              </Pie>
-                              <Tooltip />
-                            </PieChart>
-                          </ResponsiveContainer>
+                        <div className="space-y-4">
+                          <div className="h-[240px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie 
+                                  data={stagesData} 
+                                  dataKey="value" 
+                                  nameKey="name" 
+                                  cx="50%" 
+                                  cy="50%" 
+                                  outerRadius={80}
+                                  innerRadius={40}
+                                  paddingAngle={2}
+                                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                                  labelLine={false}
+                                >
+                                  {stagesData.map((entry, index) => (
+                                      <Cell 
+                                          key={`cell-${index}`} 
+                                          fill={entry.fill}
+                                          stroke="#fff"
+                                          strokeWidth={2}
+                                      />
+                                  ))}
+                                </Pie>
+                                <Tooltip 
+                                  contentStyle={{
+                                      backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                                      border: 'none',
+                                      borderRadius: '8px',
+                                      padding: '12px',
+                                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                                  }}
+                                  labelStyle={{ color: '#9ca3af', marginBottom: '4px' }}
+                                  itemStyle={{ color: '#fff' }}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          {/* Legend */}
+                          <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2 max-h-32 overflow-y-auto px-1">
+                            {stagesData.map((entry, index) => (
+                                <div key={index} className="flex items-center justify-between text-xs">
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <div 
+                                            className="w-3 h-3 rounded-full flex-shrink-0" 
+                                            style={{ backgroundColor: entry.fill }}
+                                        ></div>
+                                        <span className="text-gray-700 dark:text-gray-300 font-medium truncate">
+                                            {entry.name}
+                                        </span>
+                                    </div>
+                                    <span className="text-gray-600 dark:text-gray-400 font-semibold ml-2 flex-shrink-0">
+                                        {entry.value}
+                                    </span>
+                                </div>
+                            ))}
+                          </div>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-center h-[250px] sm:h-[300px] text-gray-500 dark:text-gray-400">
-                            {t('noDataAvailable')}
+                        <div className="flex items-center justify-center h-[320px] text-gray-600 dark:text-gray-400">
+                            <div className="text-center">
+                                <p className="text-sm font-medium">{t('noDataAvailable')}</p>
+                                <p className="text-xs mt-1 text-gray-400">{t('noStageDataAvailable')}</p>
+                            </div>
                         </div>
                     )}
                 </Card>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6">
-                <Card className="lg:col-span-1">
-                    <h2 className="text-base sm:text-lg font-semibold mb-4">{t('topUsers')}</h2>
-                    <div className="space-y-3 sm:space-y-4">
-                        {topUsers.map(user => (
-                            <div key={user.id} className="flex items-center gap-3">
-                                <img src={user.avatar} alt={user.name} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="font-semibold text-sm sm:text-base truncate">{user.name}</p>
-                                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{user.role}</p>
+            {/* Bottom Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="lg:col-span-1 border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('topUsers')}</h2>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('mostActivePerformers')}</p>
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        {topUsers.length > 0 ? (
+                            topUsers.map((user, index) => (
+                                <div 
+                                    key={user.id} 
+                                    className={`flex items-center gap-4 p-4 rounded-xl transition-all duration-300 ${
+                                        index === 0 
+                                            ? 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-2 border-yellow-200 dark:border-yellow-800 shadow-sm' 
+                                            : 'bg-gray-50/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                    }`}
+                                >
+                                    <div className="relative flex-shrink-0">
+                                        <img 
+                                            src={user.avatar} 
+                                            alt={user.name} 
+                                            className={`rounded-full flex-shrink-0 ${
+                                                index === 0 ? 'w-14 h-14 ring-4 ring-yellow-200 dark:ring-yellow-800' : 'w-12 h-12 ring-2 ring-gray-200 dark:ring-gray-700'
+                                            }`} 
+                                        />
+                                        {index === 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-gradient-to-br from-yellow-400 to-amber-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                                                1
+                                            </span>
+                                        )}
+                                        {index === 1 && (
+                                            <span className="absolute -top-1 -right-1 bg-gradient-to-br from-gray-400 to-gray-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                                                2
+                                            </span>
+                                        )}
+                                        {index === 2 && (
+                                            <span className="absolute -top-1 -right-1 bg-gradient-to-br from-amber-600 to-amber-700 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                                                3
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">
+                                            {user.name}
+                                        </p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 truncate mt-0.5">{user.role}</p>
+                                        <div className="flex items-center gap-1.5 mt-1.5">
+                                            <div className={`w-2 h-2 rounded-full ${index === 0 ? 'bg-yellow-400' : 'bg-gray-400'}`}></div>
+                                            <p className={`text-xs font-semibold ${index === 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                                                {user.activityCount} {t('activities')}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-8 text-gray-600 dark:text-gray-400">
+                                <p className="text-sm font-medium">{t('noDataAvailable')}</p>
+                                <p className="text-xs mt-1 text-gray-400">{t('noUserActivityData')}</p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </Card>
-                <Card className="lg:col-span-2">
-                    <h2 className="text-lg font-semibold mb-4">{t('latestFeedbacks')}</h2>
-                    <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <Card className="lg:col-span-2 border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('latestFeedbacks')}</h2>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('recentActivityUpdates')}</p>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto -mx-2 px-2">
                         <div className="min-w-full inline-block align-middle">
-                            <div className="overflow-hidden">
-                                <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 min-w-[600px]">
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                        <tr>
-                                            <th scope="col" className="px-3 sm:px-6 py-3">{t('date')}</th>
-                                            <th scope="col" className="px-3 sm:px-6 py-3">{t('user')}</th>
-                                            <th scope="col" className="px-3 sm:px-6 py-3">{t('lead')}</th>
-                                            <th scope="col" className="px-3 sm:px-6 py-3 hidden sm:table-cell">{t('stage')}</th>
-                                            <th scope="col" className="px-3 sm:px-6 py-3">{t('lastFeedback')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {latestFeedbacks.map(feedback => {
-                                            const lead = MOCK_LEADS.find(l => l.name === feedback.lead);
-                                            return (
-                                                <tr key={feedback.id} className="bg-white dark:bg-dark-card border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">{feedback.date}</td>
-                                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">{feedback.user}</td>
-                                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm">{feedback.lead}</td>
-                                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
-                                                        {lead && (
-                                                            <span className="bg-primary text-primary-foreground font-semibold px-2 py-1 rounded-full text-xs">
-                                                                {lead.lastStage}
+                            <div className="overflow-hidden rounded-lg">
+                                {latestFeedbacks.length > 0 ? (
+                                    <table className="w-full text-sm text-left rtl:text-right min-w-[600px]">
+                                        <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 border-b-2 border-gray-200 dark:border-gray-700">
+                                            <tr>
+                                                <th scope="col" className="px-4 py-3.5 font-bold">{t('date')}</th>
+                                                <th scope="col" className="px-4 py-3.5 font-bold">{t('user')}</th>
+                                                <th scope="col" className="px-4 py-3.5 font-bold">{t('lead')}</th>
+                                                <th scope="col" className="px-4 py-3.5 hidden sm:table-cell font-bold">{t('stage')}</th>
+                                                <th scope="col" className="px-4 py-3.5 font-bold">{t('lastFeedback')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                            {latestFeedbacks.map((feedback, index) => {
+                                                const lead = leads.find(l => l.name === feedback.lead);
+                                                return (
+                                                    <tr 
+                                                        key={feedback.id} 
+                                                        className="bg-white dark:bg-dark-card hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150"
+                                                    >
+                                                        <td className="px-4 py-4 whitespace-nowrap">
+                                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                                                {feedback.date}
                                                             </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm max-w-xs truncate">{feedback.notes}</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                                                        </td>
+                                                        <td className="px-4 py-4 whitespace-nowrap">
+                                                            <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                                                                {feedback.user}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-4 whitespace-nowrap">
+                                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                                                {feedback.lead}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-4 whitespace-nowrap hidden sm:table-cell">
+                                                            <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm">
+                                                                {getStageDisplayLabel(feedback.stage)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-4">
+                                                            <p className="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">
+                                                                {feedback.notes || <span className="text-gray-400 italic">{t('noNotes')}</span>}
+                                                            </p>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div className="text-center py-12 text-gray-600 dark:text-gray-400">
+                                        <div className="inline-block p-4 bg-gray-100 dark:bg-gray-800 rounded-full mb-3">
+                                            <UsersIcon className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                        <p className="text-sm font-medium">{t('noDataAvailable')}</p>
+                                        <p className="text-xs mt-1 text-gray-400">{t('noRecentFeedbackAvailable')}</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

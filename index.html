@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LOOP CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,17 +20,18 @@
             },
             colors: {
               primary: {
-                DEFAULT: 'hsl(var(--primary))',
-                '50': 'hsl(var(--primary-50))',
-                '100': 'hsl(var(--primary-100))',
-                '200': 'hsl(var(--primary-200))',
-                '300': 'hsl(var(--primary-300))',
-                '400': 'hsl(var(--primary-400))',
-                '500': 'hsl(var(--primary-500))',
-                '600': 'hsl(var(--primary-600))',
-                '700': 'hsl(var(--primary-700))',
-                '800': 'hsl(var(--primary-800))',
-                '900': 'hsl(var(--primary-900))',
+                '50': 'hsl(var(--color-primary-50) / <alpha-value>)',
+                '100': 'hsl(var(--color-primary-100) / <alpha-value>)',
+                '200': 'hsl(var(--color-primary-200) / <alpha-value>)',
+                '300': 'hsl(var(--color-primary-300) / <alpha-value>)',
+                '400': 'hsl(var(--color-primary-400) / <alpha-value>)',
+                '500': 'hsl(var(--color-primary-500) / <alpha-value>)',
+                '600': 'hsl(var(--color-primary-600) / <alpha-value>)',
+                '700': 'hsl(var(--color-primary-700) / <alpha-value>)',
+                '800': 'hsl(var(--color-primary-800) / <alpha-value>)',
+                '900': 'hsl(var(--color-primary-900) / <alpha-value>)',
+                '950': 'hsl(var(--color-primary-950) / <alpha-value>)',
+                DEFAULT: 'hsl(var(--color-primary-500) / <alpha-value>)',
                 foreground: 'hsl(var(--primary-foreground))',
               },
               'active-sub': 'hsl(var(--primary-active-sub))',
@@ -39,7 +40,7 @@
                  foreground: 'hsl(222.2, 47.4%, 11.2%)',
               },
               'dark-card': {
-                  DEFAULT: 'hsl(224, 71%, 4%)',
+                  DEFAULT: 'hsl(217, 33%, 17%)', // gray-800 equivalent
                   foreground: 'hsl(210, 40%, 98%)',
               }
             },
@@ -57,8 +58,48 @@
       }
     </script>
     <style>
+        :root {
+            /* Light mode text colors */
+            --text-primary: 15 23 42; /* slate-900 - for main headings and important text */
+            --text-secondary: 51 65 85; /* slate-700 - for body text */
+            --text-tertiary: 100 116 139; /* slate-500 - for labels and secondary info */
+            --text-muted: 148 163 184; /* slate-400 - for placeholder and disabled text */
+            --text-inverse: 255 255 255; /* white - for text on dark backgrounds */
+        }
+        
+        .dark {
+            /* Dark mode text colors */
+            --text-primary: 248 250 252; /* slate-50 - for main headings and important text */
+            --text-secondary: 226 232 240; /* slate-200 - for body text */
+            --text-tertiary: 203 213 225; /* slate-300 - for labels and secondary info */
+            --text-muted: 148 163 184; /* slate-400 - for placeholder and disabled text */
+            --text-inverse: 15 23 42; /* slate-900 - for text on light backgrounds */
+        }
+        
         body {
             font-family: 'Inter', 'Tajawal', sans-serif;
+            color: rgb(var(--text-secondary));
+        }
+        
+        /* Utility classes for consistent text colors */
+        .text-primary {
+            color: rgb(var(--text-primary));
+        }
+        
+        .text-secondary {
+            color: rgb(var(--text-secondary));
+        }
+        
+        .text-tertiary {
+            color: rgb(var(--text-tertiary));
+        }
+        
+        .text-muted {
+            color: rgb(var(--text-muted));
+        }
+        
+        .text-inverse {
+            color: rgb(var(--text-inverse));
         }
         /* Custom Scrollbar for Sidebar */
         .custom-scrollbar::-webkit-scrollbar {
@@ -82,6 +123,41 @@
         }
         .dark .custom-scrollbar {
             scrollbar-color: hsl(var(--primary)) #111827;
+        }
+
+        /* Prevent chart background from changing on hover */
+        .recharts-wrapper,
+        .recharts-wrapper:hover,
+        .recharts-surface,
+        .recharts-surface:hover,
+        .recharts-wrapper > svg,
+        .recharts-wrapper > svg:hover,
+        .recharts-wrapper > div,
+        .recharts-wrapper > div:hover {
+            background-color: transparent !important;
+            background: transparent !important;
+        }
+        /* Prevent Card background from changing on hover when containing charts */
+        .chart-card,
+        .chart-card:hover,
+        .chart-card:focus,
+        .chart-card:active {
+            background-color: white !important;
+            background: white !important;
+        }
+        .dark .chart-card,
+        .dark .chart-card:hover,
+        .dark .chart-card:focus,
+        .dark .chart-card:active {
+            background-color: hsl(217, 33%, 17%) !important; /* gray-800 */
+            background: hsl(217, 33%, 17%) !important;
+        }
+        .chart-card-wrapper,
+        .chart-card-wrapper:hover,
+        .chart-card-wrapper *,
+        .chart-card-wrapper *:hover {
+            background-color: transparent !important;
+            background: transparent !important;
         }
     </style>
   <script type="importmap">

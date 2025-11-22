@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { PageWrapper, Button, Card, PlusIcon, SearchIcon, Input, Loader } from '../components/index';
+import { PageWrapper, Button, Card, PlusIcon, SearchIcon, Input, Loader, EditIcon, TrashIcon } from '../components/index';
 import { ServicePackage } from '../types';
 
 const PackagesTable = ({ packages, onUpdate, onDelete }: { packages: ServicePackage[], onUpdate: (pkg: ServicePackage) => void, onDelete: (id: number) => void }) => {
@@ -36,9 +36,13 @@ const PackagesTable = ({ packages, onUpdate, onDelete }: { packages: ServicePack
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-6 py-4">
-                                        <div className="flex gap-1 sm:gap-2 flex-wrap">
-                                            <Button variant="secondary" onClick={() => onUpdate(pkg)} className="text-xs sm:text-sm">{t('update')}</Button>
-                                            <Button variant="danger" onClick={() => onDelete(pkg.id)} className="text-xs sm:text-sm">{t('delete')}</Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" className="p-1 h-auto" onClick={() => onUpdate(pkg)}>
+                                                <EditIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(pkg.id)}>
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -57,10 +61,16 @@ export const ServicePackagesPage = () => {
         currentUser,
         servicePackages,
         deleteServicePackage,
+        setConfirmDeleteConfig,
+        setIsConfirmDeleteModalOpen,
+        setIsAddServicePackageModalOpen,
+        setEditingServicePackage,
+        setIsEditServicePackageModalOpen,
     } = useAppContext();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // TODO: استدعي getServicePackagesAPI() هنا عند فتح الصفحة
         const timer = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timer);
     }, []);
@@ -82,14 +92,23 @@ export const ServicePackagesPage = () => {
     }
 
     const handleDeletePackage = (id: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            deleteServicePackage(id);
+        const pkg = servicePackages.find(p => p.id === id);
+        if (pkg) {
+            setConfirmDeleteConfig({
+                title: t('deleteServicePackage') || 'Delete Service Package',
+                message: t('confirmDeleteServicePackage') || 'Are you sure you want to delete',
+                itemName: pkg.name,
+                onConfirm: async () => {
+                    await deleteServicePackage(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 
     const handleUpdatePackage = (pkg: ServicePackage) => {
-        // TODO: Implement update modal
-        console.log('Update package:', pkg);
+        setEditingServicePackage(pkg);
+        setIsEditServicePackageModalOpen(true);
     };
 
     if (loading) {
@@ -108,7 +127,7 @@ export const ServicePackagesPage = () => {
             actions={
                 <>
                     <Input id="search-packages" placeholder={t('search')} className="max-w-xs ps-10" icon={<SearchIcon className="w-4 h-4" />} />
-                    <Button>
+                    <Button onClick={() => setIsAddServicePackageModalOpen(true)}>
                         <PlusIcon className="w-4 h-4"/> {t('addServicePackage') || 'Add Service Package'}
                     </Button>
                 </>

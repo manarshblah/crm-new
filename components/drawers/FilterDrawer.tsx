@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { MOCK_USERS, MOCK_CAMPAIGNS } from '../../constants';
 import { XIcon } from '../icons';
 import { Button } from '../Button';
 
@@ -26,19 +25,26 @@ const FilterLabel = ({ children, htmlFor }: { children?: React.ReactNode; htmlFo
 );
 
 // FIX: Made children optional to fix missing children prop error.
-const FilterSelect = ({ id, children }: { id: string; children?: React.ReactNode }) => (
-    <select id={id} className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-        {children}
-    </select>
-);
+const FilterSelect = ({ id, children }: { id: string; children?: React.ReactNode }) => {
+    const { language } = useAppContext();
+    return (
+        <select id={id} dir={language === 'ar' ? 'rtl' : 'ltr'} className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+            {children}
+        </select>
+    );
+};
 
-const FilterInput = ({ id, type = 'text', placeholder }: { id: string; type?: string; placeholder?: string }) => (
-    <input type={type} id={id} placeholder={placeholder} className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" />
-);
+const FilterInput = ({ id, type = 'text', placeholder }: { id: string; type?: string; placeholder?: string }) => {
+    const { language } = useAppContext();
+    return (
+        <input type={type} id={id} placeholder={placeholder} dir={language === 'ar' ? 'rtl' : 'ltr'} className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" />
+    );
+};
 
 
 export const FilterDrawer = () => {
-    const { isFilterDrawerOpen, setIsFilterDrawerOpen, t } = useAppContext();
+    const { isFilterDrawerOpen, setIsFilterDrawerOpen, t, currentUser, users, campaigns } = useAppContext();
+    const isRealEstate = currentUser?.company?.specialization === 'real_estate';
 
     return (
         <>
@@ -57,7 +63,7 @@ export const FilterDrawer = () => {
                                 <FilterLabel htmlFor="team-leader">{t('teamLeader')}</FilterLabel>
                                 <FilterSelect id="team-leader">
                                     <option>{t('selectLeader')}</option>
-                                    {MOCK_USERS.filter(u => u.role.includes('Manager')).map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
+                                    {users.filter(u => u.role.includes('Manager')).map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
                                 </FilterSelect>
                             </div>
                             <div>
@@ -72,7 +78,7 @@ export const FilterDrawer = () => {
                                 <FilterLabel htmlFor="assigned-to">{t('assignedTo')}</FilterLabel>
                                 <FilterSelect id="assigned-to">
                                     <option>{t('selectUser')}</option>
-                                    {MOCK_USERS.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
+                                    {users.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
                                 </FilterSelect>
                             </div>
                             <div>
@@ -88,12 +94,12 @@ export const FilterDrawer = () => {
                     
                     <FilterSection title={t('leadInfo')}>
                         <div className="space-y-4 pt-2">
-                             <div><FilterLabel htmlFor="project">{t('project')}</FilterLabel><FilterSelect id="project"><option>{t('selectProject')}</option></FilterSelect></div>
+                             {isRealEstate && <div><FilterLabel htmlFor="project">{t('project')}</FilterLabel><FilterSelect id="project"><option>{t('selectProject')}</option></FilterSelect></div>}
                              <div>
                                 <FilterLabel htmlFor="campaign">{t('campaign')}</FilterLabel>
                                 <FilterSelect id="campaign">
                                     <option>{t('selectCampaign')}</option>
-                                    {MOCK_CAMPAIGNS.map(c => <option key={c.id}>{c.name}</option>)}
+                                    {campaigns.map(c => <option key={c.id}>{c.name}</option>)}
                                 </FilterSelect>
                             </div>
                              <div><FilterLabel htmlFor="channel">{t('channel')}</FilterLabel><FilterSelect id="channel"><option>{t('selectChannel')}</option><option>{t('facebook')}</option><option>{t('website')}</option></FilterSelect></div>

@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Loader } from '../components/index';
+import { PageWrapper, Button, Card, FilterIcon, PlusIcon, SearchIcon, Input, Loader, TrashIcon } from '../components/index';
 import { Deal } from '../types';
 
-const DealsTable = ({ deals, onDelete }: { deals: Deal[], onDelete: (id: number) => void }) => {
+const DealsTable = ({ deals, onDelete, isRealEstate }: { deals: Deal[], onDelete: (id: number) => void, isRealEstate: boolean }) => {
     const { t } = useAppContext();
     return (
         <div className="overflow-x-auto -mx-4 sm:mx-0">
@@ -16,7 +16,7 @@ const DealsTable = ({ deals, onDelete }: { deals: Deal[], onDelete: (id: number)
                             <tr>
                                 <th scope="col" className="px-3 sm:px-6 py-3">{t('dealId')}</th>
                                 <th scope="col" className="px-3 sm:px-6 py-3">{t('clientName')}</th>
-                                <th scope="col" className="px-3 sm:px-6 py-3 hidden md:table-cell">{t('unit')}</th>
+                                {isRealEstate && <th scope="col" className="px-3 sm:px-6 py-3 hidden md:table-cell">{t('unit')}</th>}
                                 <th scope="col" className="px-3 sm:px-6 py-3 hidden lg:table-cell">{t('paymentMethod')}</th>
                                 <th scope="col" className="px-3 sm:px-6 py-3">{t('status')}</th>
                                 <th scope="col" className="px-3 sm:px-6 py-3">{t('value')}</th>
@@ -28,7 +28,7 @@ const DealsTable = ({ deals, onDelete }: { deals: Deal[], onDelete: (id: number)
                                 <tr key={deal.id} className="bg-white dark:bg-dark-card border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                     <td className="px-3 sm:px-6 py-4 font-medium text-gray-900 dark:text-white text-xs sm:text-sm">{deal.id}</td>
                                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">{deal.clientName}</td>
-                                    <td className="px-3 sm:px-6 py-4 hidden md:table-cell text-xs sm:text-sm">{deal.unit}</td>
+                                    {isRealEstate && <td className="px-3 sm:px-6 py-4 hidden md:table-cell text-xs sm:text-sm">{deal.unit || '-'}</td>}
                                     <td className="px-3 sm:px-6 py-4 hidden lg:table-cell text-xs sm:text-sm">{deal.paymentMethod}</td>
                                     <td className="px-3 sm:px-6 py-4">
                                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -41,7 +41,9 @@ const DealsTable = ({ deals, onDelete }: { deals: Deal[], onDelete: (id: number)
                                     </td>
                                     <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">{deal.value.toLocaleString()}</td>
                                     <td className="px-3 sm:px-6 py-4">
-                                        <Button variant="danger" className="p-1 h-auto text-xs" onClick={() => onDelete(deal.id)}>{t('delete')}</Button>
+                                        <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(deal.id)}>
+                                            <TrashIcon className="w-4 h-4" />
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}
@@ -54,8 +56,22 @@ const DealsTable = ({ deals, onDelete }: { deals: Deal[], onDelete: (id: number)
 }
 
 export const DealsPage = () => {
-    const { t, setCurrentPage, setIsDealsFilterDrawerOpen, deals, deleteDeal } = useAppContext();
+    // TODO: أضف useEffect لتحميل Deals من API عند فتح الصفحة
+    // مثال:
+    // useEffect(() => {
+    //   const loadDeals = async () => {
+    //     try {
+    //       const dealsData = await getDealsAPI();
+    //       // TODO: استخدم setDeals من AppContext
+    //     } catch (error) {
+    //       console.error('Error loading deals:', error);
+    //     }
+    //   };
+    //   loadDeals();
+    // }, []);
+    const { t, setCurrentPage, setIsDealsFilterDrawerOpen, deals, deleteDeal, currentUser, setConfirmDeleteConfig, setIsConfirmDeleteModalOpen } = useAppContext();
     const [loading, setLoading] = useState(true);
+    const isRealEstate = currentUser?.company?.specialization === 'real_estate';
 
     useEffect(() => {
         const timer = setTimeout(() => setLoading(false), 1000);
@@ -63,8 +79,17 @@ export const DealsPage = () => {
     }, []);
 
     const handleDelete = (id: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            deleteDeal(id);
+        const deal = deals.find(d => d.id === id);
+        if (deal) {
+            setConfirmDeleteConfig({
+                title: t('deleteDeal') || 'Delete Deal',
+                message: t('confirmDeleteDeal') || 'Are you sure you want to delete the deal for',
+                itemName: deal.clientName,
+                onConfirm: async () => {
+                    await deleteDeal(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 
@@ -83,7 +108,7 @@ export const DealsPage = () => {
             title={t('deals')}
             actions={
                 <>
-                    <Input id="search-deals" placeholder={t('searchDeals')} className="w-full sm:w-auto max-w-xs ps-10" icon={<SearchIcon className="w-4 h-4" />} />
+                    <Input id="search-deals" placeholder={t('searchDeals')} className="w-full sm:w-auto max-w-xs" icon={<SearchIcon className="w-4 h-4" />} />
                     <Button variant="secondary" onClick={() => setIsDealsFilterDrawerOpen(true)} className="w-full sm:w-auto">
                         <FilterIcon className="w-4 h-4"/> <span className="hidden sm:inline">{t('filter')}</span>
                     </Button>
@@ -94,7 +119,7 @@ export const DealsPage = () => {
             }
         >
             <Card>
-                <DealsTable deals={deals} onDelete={handleDelete} />
+                <DealsTable deals={deals} onDelete={handleDelete} isRealEstate={isRealEstate} />
             </Card>
         </PageWrapper>
     );

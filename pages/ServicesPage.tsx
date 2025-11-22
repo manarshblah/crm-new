@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { PageWrapper, Button, Card, PlusIcon, SearchIcon, Input, Loader } from '../components/index';
+import { PageWrapper, Button, Card, PlusIcon, SearchIcon, Input, Loader, EditIcon, TrashIcon } from '../components/index';
 import { Service } from '../types';
 
 const ServicesTable = ({ services, onUpdate, onDelete }: { services: Service[], onUpdate: (service: Service) => void, onDelete: (id: number) => void }) => {
@@ -36,9 +36,13 @@ const ServicesTable = ({ services, onUpdate, onDelete }: { services: Service[], 
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-6 py-4">
-                                        <div className="flex gap-1 sm:gap-2 flex-wrap">
-                                            <Button variant="secondary" onClick={() => onUpdate(service)} className="text-xs sm:text-sm">{t('update')}</Button>
-                                            <Button variant="danger" onClick={() => onDelete(service.id)} className="text-xs sm:text-sm">{t('delete')}</Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" className="p-1 h-auto" onClick={() => onUpdate(service)}>
+                                                <EditIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" className="p-1 h-auto !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20" onClick={() => onDelete(service.id)}>
+                                                <TrashIcon className="w-4 h-4" />
+                                            </Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -57,10 +61,30 @@ export const ServicesPage = () => {
         currentUser,
         services,
         deleteService,
+        setConfirmDeleteConfig,
+        setIsConfirmDeleteModalOpen,
+        setIsAddServiceModalOpen,
+        setEditingService,
+        setIsEditServiceModalOpen,
     } = useAppContext();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // TODO: استدعي API لتحميل Services عند فتح الصفحة (لشركات الخدمات فقط)
+        // مثال:
+        // const loadServices = async () => {
+        //   try {
+        //     const servicesData = await getServicesAPI();
+        //     // TODO: استخدم setServices من AppContext لتحديث البيانات
+        //   } catch (error) {
+        //     console.error('Error loading services:', error);
+        //   } finally {
+        //     setLoading(false);
+        //   }
+        // };
+        // if (isServices) loadServices();
+        
+        // الكود الحالي (للاختبار فقط):
         const timer = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timer);
     }, []);
@@ -82,14 +106,23 @@ export const ServicesPage = () => {
     }
 
     const handleDeleteService = (id: number) => {
-        if (window.confirm(t('confirmDelete'))) {
-            deleteService(id);
+        const service = services.find(s => s.id === id);
+        if (service) {
+            setConfirmDeleteConfig({
+                title: t('deleteService') || 'Delete Service',
+                message: t('confirmDeleteService') || 'Are you sure you want to delete',
+                itemName: service.name,
+                onConfirm: async () => {
+                    await deleteService(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 
     const handleUpdateService = (service: Service) => {
-        // TODO: Implement update modal
-        console.log('Update service:', service);
+        setEditingService(service);
+        setIsEditServiceModalOpen(true);
     };
 
     if (loading) {
@@ -108,7 +141,7 @@ export const ServicesPage = () => {
             actions={
                 <>
                     <Input id="search-services" placeholder={t('search')} className="max-w-xs ps-10" icon={<SearchIcon className="w-4 h-4" />} />
-                    <Button>
+                    <Button onClick={() => setIsAddServiceModalOpen(true)}>
                         <PlusIcon className="w-4 h-4"/> {t('addService') || 'Add Service'}
                     </Button>
                 </>

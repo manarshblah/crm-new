@@ -27,30 +27,31 @@ const toCamelCase = (str: string) => {
 };
 
 const SidebarItem = ({ name, icon: Icon, isActive, hasSubItems, isSubItem, isOpen, onClick }: SidebarItemProps) => {
+    const { language } = useAppContext();
     const activeClass = isActive
         ? isSubItem
-            ? 'bg-active-sub text-white'
-            : 'bg-primary text-white'
-        : 'hover:bg-gray-200 dark:hover:bg-gray-700';
+            ? 'bg-active-sub text-white dark:bg-primary-600 dark:text-white'
+            : 'bg-primary text-white dark:bg-primary-600 dark:text-white'
+        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800';
+    
+    const iconMargin = language === 'ar' ? 'ml-3' : 'mr-3';
     
     return (
         <a
             href="#"
             onClick={(e) => { e.preventDefault(); onClick(); }}
-            className={`flex items-center p-2 rounded-lg transition-colors duration-200 ${
-                isSubItem ? 'ps-8' : ''
-            } ${activeClass}`}
+            className={`flex items-center px-4 py-2 font-medium rounded-md transition-colors duration-150 ${activeClass}`}
         >
-            {Icon && <Icon className="w-5 h-5 me-3" />}
+            {Icon && <Icon className={`w-5 h-5 ${iconMargin} ${isActive ? 'text-white' : ''}`} />}
             <span className="flex-1 whitespace-nowrap">{name}</span>
-            {hasSubItems && <ChevronDownIcon className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
+            {hasSubItems && <ChevronDownIcon className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />}
         </a>
     );
 };
 
 
 export const Sidebar = () => {
-    const { currentPage, setCurrentPage, setIsLoggedIn, isSidebarOpen, setIsSidebarOpen, t, siteLogo, currentUser } = useAppContext();
+    const { currentPage, setCurrentPage, setIsLoggedIn, isSidebarOpen, setIsSidebarOpen, t, siteLogo, currentUser, language } = useAppContext();
     const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({});
 
     const handleToggleSubMenu = (name: string) => {
@@ -79,21 +80,49 @@ export const Sidebar = () => {
         }
     };
 
+    const sidebarBaseClasses = "flex-shrink-0 w-64 bg-white dark:bg-gray-900 flex flex-col fixed md:relative inset-y-0 z-40 transform transition-transform duration-300 ease-in-out";
+    const languageSpecificClasses = language === 'ar' 
+        ? 'border-l border-gray-200 dark:border-gray-800 right-0' 
+        : 'border-r border-gray-200 dark:border-gray-800 left-0';
+    
+    const mobileTransformClass = language === 'ar'
+        ? (isSidebarOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0')
+        : (isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0');
+    
     return (
-        <aside className={`fixed inset-y-0 z-40 flex h-full w-64 flex-col bg-gray-100 dark:bg-gray-900 border-e dark:border-gray-800 rtl:border-e-0 rtl:border-s transform transition-transform duration-300 ease-in-out 
-                            lg:translate-x-0 
-                            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full'}`}>
-            <div className="flex items-center justify-between p-4 border-b dark:border-gray-800 h-16">
+        <>
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden transition-opacity duration-300"
+                    onClick={() => setIsSidebarOpen(false)}
+                    aria-hidden="true"
+                ></div>
+            )}
+            <aside className={`${sidebarBaseClasses} ${languageSpecificClasses} ${mobileTransformClass}`}>
+            <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
                 <div className="flex items-center gap-2">
-                    {siteLogo && <img src={siteLogo} alt="Site Logo" className="h-10 object-contain" />}
-                    <h1 className="text-xl font-bold text-primary">LOOP CRM</h1>
+                    <img 
+                        src={siteLogo || '/logo.png'} 
+                        alt="LOOP CRM Logo" 
+                        className="h-10 w-auto object-contain" 
+                        onError={(e) => {
+                            // Fallback if logo fails to load
+                            const target = e.target as HTMLImageElement;
+                            if (target.src !== '/logo.png') {
+                                target.src = '/logo.png';
+                            }
+                        }}
+                    />
                 </div>
-                {/* FIX: The Button component requires children. */}
-                <Button variant="ghost" className="lg:hidden p-1 -mr-2 rtl:-mr-0 rtl:-ml-2" onClick={() => setIsSidebarOpen(false)}>
+                <button
+                    className="md:hidden p-2 rounded-md text-gray-500 dark:text-gray-400"
+                    onClick={() => setIsSidebarOpen(false)}
+                    aria-label="Close sidebar"
+                >
                     <XIcon className="h-6 w-6" />
-                </Button>
+                </button>
             </div>
-            <nav className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
+            <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
                 {SIDEBAR_ITEMS.map((item) => {
                     const isOpen = openSubMenus[item.name] ?? false;
                     const itemNameKey = toCamelCase(item.name) as keyof typeof translations.en;
@@ -110,20 +139,25 @@ export const Sidebar = () => {
                                 onClick={() => subItems ? handleToggleSubMenu(item.name) : handleNavigation(item.name)}
                             />
                             {subItems && isOpen && (
-                                <div className="ps-4 mt-1 space-y-1">
+                                <div className="pt-2 pb-1 space-y-1" style={{ [language === 'ar' ? 'paddingRight' : 'paddingLeft']: '1.5rem' }}>
                                     {subItems.map(sub => {
                                         const subItemNameKey = toCamelCase(sub) as keyof typeof translations.en;
                                         return (
-                                            // FIX: The `key` prop is for React's internal use and should not be passed to the component.
-                                            // FIX: Wrapped SidebarItem in a div with a key to resolve TypeScript error about key prop not being in SidebarItemProps.
-                                            <div key={sub}>
-                                                <SidebarItem
-                                                    name={t(subItemNameKey)}
-                                                    isSubItem
-                                                    isActive={currentPage === sub}
-                                                    onClick={() => handleNavigation(sub)}
-                                                />
-                                            </div>
+                                            <a
+                                                key={sub}
+                                                href="#"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handleNavigation(sub);
+                                                }}
+                                                className={`block px-4 py-2 font-medium rounded-md transition-colors duration-150 ${
+                                                    currentPage === sub
+                                                        ? 'bg-gray-100 text-gray-900 dark:bg-primary-600 dark:text-white'
+                                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                                }`}
+                                            >
+                                                {t(subItemNameKey)}
+                                            </a>
                                         );
                                     })}
                                 </div>
@@ -132,19 +166,27 @@ export const Sidebar = () => {
                     );
                 })}
             </nav>
-            <div className="p-4 border-t dark:border-gray-800">
+            <div className="px-4 py-6 border-t border-gray-200 dark:border-gray-700">
                 <SidebarItem
                     name={t('settings')}
                     icon={SETTINGS_ITEM.icon}
                     isActive={currentPage === 'Settings'}
                     onClick={() => handleNavigation('Settings')}
                 />
-                {/* FIX: The Button component requires children. */}
-                 <Button variant="ghost" className="w-full justify-start mt-2" onClick={() => setIsLoggedIn(false)}>
-                    <LogOutIcon className="w-5 h-5 me-3" />
-                    <span className="flex-1 whitespace-nowrap">{t('logout')}</span>
-                </Button>
+                <a
+                    href="#"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        setIsLoggedIn(false);
+                        window.location.href = '/login';
+                    }}
+                    className="flex items-center px-4 py-2 mt-2 font-medium rounded-md transition-colors duration-150 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                    <LogOutIcon className={`w-5 h-5 ${language === 'ar' ? 'ml-3' : 'mr-3'}`} />
+                    {t('logout')}
+                </a>
             </div>
         </aside>
+        </>
     );
 };

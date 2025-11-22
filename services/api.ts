@@ -1,0 +1,1117 @@
+/**
+ * API Service
+ * 
+ * هذا الملف يحتوي على جميع استدعاءات API
+ * TODO: تأكد من أن API يعمل على هذا الرابط (افتراضي: http://localhost:8000)
+ */
+
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+
+/**
+ * Helper function to make API requests
+ * يستخدم JWT Bearer token للـ authentication
+ */
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  retryOn401: boolean = true
+): Promise<T> {
+  const token = localStorage.getItem('accessToken'); // JWT access token
+  
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    },
+  });
+
+  // إذا كان الخطأ 401 و retryOn401 = true، حاول refresh token
+  if (response.status === 401 && retryOn401) {
+    try {
+      await refreshTokenAPI();
+      // أعد المحاولة مرة أخرى بدون retry
+      return apiRequest<T>(endpoint, options, false);
+    } catch (refreshError) {
+      // إذا فشل refresh، أعد المستخدم إلى صفحة تسجيل الدخول
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('currentUser');
+      window.location.href = '/';
+      throw new Error('Session expired. Please login again.');
+    }
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage = errorData.detail || errorData.message || errorData.error || JSON.stringify(errorData) || `API Error: ${response.status} ${response.statusText}`;
+    console.error('API Error:', response.status, errorData);
+    throw new Error(errorMessage);
+  }
+
+  // معالجة DELETE requests - قد لا تعيد response body
+  if (options.method === 'DELETE') {
+    const contentType = response.headers.get('content-type');
+    const text = await response.text();
+    
+    // إذا كان response فارغ أو ليس JSON، أرجع undefined
+    if (!text || (contentType && !contentType.includes('application/json'))) {
+      return undefined as T;
+    }
+    
+    // إذا كان response JSON، parseه
+    try {
+      return JSON.parse(text);
+    } catch {
+      return undefined as T;
+    }
+  }
+
+  // للـ requests الأخرى، parse JSON بشكل عادي
+  const text = await response.text();
+  if (!text) {
+    return undefined as T;
+  }
+  
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined as T;
+  }
+}
+
+// ==================== Authentication APIs ====================
+
+/**
+ * تسجيل الدخول - يعيد JWT token + بيانات المستخدم
+ * POST /api/auth/login/
+ * Body: { username: string, password: string }
+ * Response: { access: string, refresh: string, user: { id, username, email, first_name, last_name, role, company, company_name } }
+ */
+export const loginAPI = async (username: string, password: string) => {
+  const response = await fetch(`${BASE_URL}/auth/login/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Invalid username or password');
+  }
+
+  const data = await response.json();
+  // احفظ tokens
+  localStorage.setItem('accessToken', data.access);
+  localStorage.setItem('refreshToken', data.refresh);
+  
+  return data;
+};
+
+/**
+ * تسجيل شركة جديدة مع المالك
+ * POST /api/auth/register/
+ * Body: { company: { name, domain, specialization }, owner: { first_name, last_name, email, username, password }, plan_id?, billing_cycle? }
+ * Response: { access, refresh, user, company, subscription? }
+ */
+export const registerCompanyAPI = async (data: {
+  company: {
+    name: string;
+    domain: string;
+    specialization: 'real_estate' | 'services' | 'products';
+  };
+  owner: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    username: string;
+    password: string;
+  };
+  plan_id?: number | null;
+  billing_cycle?: 'monthly' | 'yearly';
+}) => {
+  const response = await fetch(`${BASE_URL}/auth/register/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || errorData.message || errorData.error || 'Registration failed');
+  }
+
+  const responseData = await response.json();
+  
+  // Save tokens
+  if (responseData.access) {
+    localStorage.setItem('accessToken', responseData.access);
+  }
+  if (responseData.refresh) {
+    localStorage.setItem('refreshToken', responseData.refresh);
+  }
+  
+  return responseData;
+};
+
+/**
+ * تحديث access token باستخدام refresh token
+ * POST /api/auth/refresh/
+ * Body: { refresh: string }
+ * Response: { access: string }
+ */
+export const refreshTokenAPI = async () => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const response = await fetch(`${BASE_URL}/auth/refresh/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refresh: refreshToken }),
+  });
+
+  if (!response.ok) {
+    // إذا فشل refresh، احذف tokens وأعد المستخدم إلى صفحة تسجيل الدخول
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    throw new Error('Token refresh failed');
+  }
+
+  const data = await response.json();
+  localStorage.setItem('accessToken', data.access);
+  return data;
+};
+
+/**
+ * الحصول على بيانات المستخدم الحالي
+ * GET /api/users/me/
+ * Headers: { Authorization: 'Bearer token' }
+ * Response: User object with company info
+ */
+export const getCurrentUserAPI = async () => {
+  return apiRequest<any>('/users/me/');
+};
+
+/**
+ * تغيير كلمة المرور للمستخدم الحالي
+ * POST /api/users/change_password/
+ * Headers: { Authorization: 'Bearer token' }
+ * Body: { current_password: string, new_password: string, confirm_password: string }
+ * Response: { message: string }
+ */
+export const changePasswordAPI = async (currentPassword: string, newPassword: string, confirmPassword: string) => {
+  return apiRequest<{ message: string }>('/users/change_password/', {
+    method: 'POST',
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    }),
+  });
+};
+
+// ==================== Users APIs ====================
+
+/**
+ * الحصول على جميع المستخدمين
+ * GET /api/users/
+ * Response: { count, next, previous, results: User[] }
+ */
+export const getUsersAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/users/');
+};
+
+/**
+ * إنشاء مستخدم جديد
+ * POST /api/users/
+ * Body: { username, email, password, first_name, last_name, role, company }
+ * Response: User object
+ */
+export const createUserAPI = async (userData: any) => {
+  return apiRequest<any>('/users/', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  });
+};
+
+/**
+ * تحديث مستخدم
+ * PUT /api/users/:id/
+ * Body: { username, email, first_name, last_name, phone, role, company }
+ * Response: User object
+ */
+export const updateUserAPI = async (userId: number, userData: any) => {
+  return apiRequest<any>(`/users/${userId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(userData),
+  });
+};
+
+/**
+ * حذف مستخدم
+ * DELETE /api/users/:id/
+ */
+export const deleteUserAPI = async (userId: number) => {
+  return apiRequest<void>(`/users/${userId}/`, {
+    method: 'DELETE',
+  });
+};
+
+// ==================== Leads APIs (Clients in API) ====================
+
+/**
+ * الحصول على جميع Clients (Leads في Frontend)
+ * GET /api/clients/
+ * Query params: ?type=fresh&priority=high&search=name (اختياري)
+ * Response: { count, next, previous, results: Client[] }
+ */
+export const getLeadsAPI = async (filters?: { type?: string; priority?: string; search?: string }) => {
+  const queryParams = new URLSearchParams();
+  if (filters?.type && filters.type !== 'All') queryParams.append('type', filters.type.toLowerCase());
+  if (filters?.priority && filters.priority !== 'All') queryParams.append('priority', filters.priority.toLowerCase());
+  if (filters?.search) queryParams.append('search', filters.search);
+  
+  const queryString = queryParams.toString();
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>(`/clients/${queryString ? `?${queryString}` : ''}`);
+};
+
+/**
+ * إنشاء Client جديد (Lead)
+ * POST /api/clients/
+ * Body: { name, phone_number, priority, type, communication_way, budget, company, assigned_to }
+ * Response: Client object
+ */
+export const createLeadAPI = async (leadData: any) => {
+  return apiRequest<any>('/clients/', {
+    method: 'POST',
+    body: JSON.stringify(leadData),
+  });
+};
+
+/**
+ * تحديث Client (Lead)
+ * PUT /api/clients/:id/
+ * Body: Client data
+ * Response: Client object
+ */
+export const updateLeadAPI = async (leadId: number, leadData: any) => {
+  return apiRequest<any>(`/clients/${leadId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(leadData),
+  });
+};
+
+// ==================== Deals APIs ====================
+
+/**
+ * الحصول على جميع Deals
+ * GET /api/deals/
+ * Response: { count, next, previous, results: Deal[] }
+ */
+export const getDealsAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/deals/');
+};
+
+/**
+ * إنشاء Deal جديد
+ * POST /api/deals/
+ * Body: { client, company, employee, stage }
+ * Response: Deal object
+ */
+export const createDealAPI = async (dealData: any) => {
+  return apiRequest<any>('/deals/', {
+    method: 'POST',
+    body: JSON.stringify(dealData),
+  });
+};
+
+/**
+ * حذف Deal
+ * DELETE /api/deals/:id/
+ */
+export const deleteDealAPI = async (dealId: number) => {
+  return apiRequest<void>(`/deals/${dealId}/`, {
+    method: 'DELETE',
+  });
+};
+
+// ==================== Real Estate APIs ====================
+
+/**
+ * الحصول على جميع Developers
+ * GET /api/developers/
+ */
+export const getDevelopersAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/developers/');
+};
+
+/**
+ * إنشاء Developer جديد
+ * POST /api/developers/
+ */
+export const createDeveloperAPI = async (developerData: any) => {
+  return apiRequest<any>('/developers/', {
+    method: 'POST',
+    body: JSON.stringify(developerData),
+  });
+};
+
+/**
+ * تحديث Developer
+ * PUT /api/developers/:id/
+ */
+export const updateDeveloperAPI = async (developerId: number, developerData: any) => {
+  return apiRequest<any>(`/developers/${developerId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(developerData),
+  });
+};
+
+/**
+ * حذف Developer
+ * DELETE /api/developers/:id/
+ */
+export const deleteDeveloperAPI = async (developerId: number) => {
+  const token = localStorage.getItem('accessToken');
+  const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+  
+  const response = await fetch(`${BASE_URL}/developers/${developerId}/`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || errorData.message || `API Error: ${response.status}`);
+  }
+
+  // DELETE قد لا يعيد response body
+  return;
+};
+
+/**
+ * الحصول على جميع Projects
+ * GET /api/projects/
+ */
+export const getProjectsAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/projects/');
+};
+
+/**
+ * إنشاء Project جديد
+ * POST /api/projects/
+ */
+export const createProjectAPI = async (projectData: any) => {
+  return apiRequest<any>('/projects/', {
+    method: 'POST',
+    body: JSON.stringify(projectData),
+  });
+};
+
+/**
+ * تحديث Project
+ * PUT /api/projects/:id/
+ */
+export const updateProjectAPI = async (projectId: number, projectData: any) => {
+  return apiRequest<any>(`/projects/${projectId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(projectData),
+  });
+};
+
+/**
+ * حذف Project
+ * DELETE /api/projects/:id/
+ */
+export const deleteProjectAPI = async (projectId: number) => {
+  const token = localStorage.getItem('accessToken');
+  const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+  
+  const response = await fetch(`${BASE_URL}/projects/${projectId}/`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || errorData.message || `API Error: ${response.status}`);
+  }
+
+  // DELETE قد لا يعيد response body
+  return;
+};
+
+/**
+ * الحصول على جميع Units
+ * GET /api/units/
+ * Query params: ?project=xxx&bedrooms=xxx (اختياري)
+ */
+export const getUnitsAPI = async (filters?: any) => {
+  const queryParams = new URLSearchParams();
+  if (filters?.project) queryParams.append('project', filters.project);
+  if (filters?.bedrooms) queryParams.append('bedrooms', filters.bedrooms);
+  const queryString = queryParams.toString();
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>(`/units/${queryString ? `?${queryString}` : ''}`);
+};
+
+/**
+ * إنشاء Unit جديد
+ * POST /api/units/
+ */
+export const createUnitAPI = async (unitData: any) => {
+  return apiRequest<any>('/units/', {
+    method: 'POST',
+    body: JSON.stringify(unitData),
+  });
+};
+
+/**
+ * تحديث Unit
+ * PUT /api/units/:id/
+ */
+export const updateUnitAPI = async (unitId: number, unitData: any) => {
+  return apiRequest<any>(`/units/${unitId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(unitData),
+  });
+};
+
+/**
+ * حذف Unit
+ * DELETE /api/units/:id/
+ */
+export const deleteUnitAPI = async (unitId: number) => {
+  return apiRequest<void>(`/units/${unitId}/`, {
+    method: 'DELETE',
+  });
+};
+
+/**
+ * الحصول على جميع Owners
+ * GET /api/owners/
+ */
+export const getOwnersAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/owners/');
+};
+
+/**
+ * إنشاء Owner جديد
+ * POST /api/owners/
+ */
+export const createOwnerAPI = async (ownerData: any) => {
+  return apiRequest<any>('/owners/', {
+    method: 'POST',
+    body: JSON.stringify(ownerData),
+  });
+};
+
+/**
+ * تحديث Owner
+ * PUT /api/owners/:id/
+ */
+export const updateOwnerAPI = async (ownerId: number, ownerData: any) => {
+  return apiRequest<any>(`/owners/${ownerId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(ownerData),
+  });
+};
+
+/**
+ * حذف Owner
+ * DELETE /api/owners/:id/
+ */
+export const deleteOwnerAPI = async (ownerId: number) => {
+  return apiRequest<void>(`/owners/${ownerId}/`, {
+    method: 'DELETE',
+  });
+};
+
+// ==================== Services APIs ====================
+
+/**
+ * الحصول على جميع Services
+ * GET /api/services/
+ */
+export const getServicesAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/services/');
+};
+
+/**
+ * إنشاء Service جديد
+ * POST /api/services/
+ */
+export const createServiceAPI = async (serviceData: any) => {
+  return apiRequest<any>('/services/', {
+    method: 'POST',
+    body: JSON.stringify(serviceData),
+  });
+};
+
+/**
+ * تحديث Service
+ * PUT /api/services/:id/
+ */
+export const updateServiceAPI = async (serviceId: number, serviceData: any) => {
+  return apiRequest<any>(`/services/${serviceId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(serviceData),
+  });
+};
+
+/**
+ * حذف Service
+ * DELETE /api/services/:id/
+ */
+export const deleteServiceAPI = async (serviceId: number) => {
+  return apiRequest<void>(`/services/${serviceId}/`, {
+    method: 'DELETE',
+  });
+};
+
+/**
+ * الحصول على جميع Service Packages
+ * GET /api/service-packages/
+ */
+export const getServicePackagesAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/service-packages/');
+};
+
+/**
+ * إنشاء Service Package جديد
+ * POST /api/service-packages/
+ */
+export const createServicePackageAPI = async (packageData: any) => {
+  return apiRequest<any>('/service-packages/', {
+    method: 'POST',
+    body: JSON.stringify(packageData),
+  });
+};
+
+/**
+ * تحديث Service Package
+ * PUT /api/service-packages/:id/
+ */
+export const updateServicePackageAPI = async (packageId: number, packageData: any) => {
+  return apiRequest<any>(`/service-packages/${packageId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(packageData),
+  });
+};
+
+/**
+ * حذف Service Package
+ * DELETE /api/service-packages/:id/
+ */
+export const deleteServicePackageAPI = async (packageId: number) => {
+  return apiRequest<void>(`/service-packages/${packageId}/`, {
+    method: 'DELETE',
+  });
+};
+
+/**
+ * الحصول على جميع Service Providers
+ * GET /api/service-providers/
+ */
+export const getServiceProvidersAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/service-providers/');
+};
+
+/**
+ * إنشاء Service Provider جديد
+ * POST /api/service-providers/
+ */
+export const createServiceProviderAPI = async (providerData: any) => {
+  return apiRequest<any>('/service-providers/', {
+    method: 'POST',
+    body: JSON.stringify(providerData),
+  });
+};
+
+/**
+ * تحديث Service Provider
+ * PUT /api/service-providers/:id/
+ */
+export const updateServiceProviderAPI = async (providerId: number, providerData: any) => {
+  return apiRequest<any>(`/service-providers/${providerId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(providerData),
+  });
+};
+
+/**
+ * حذف Service Provider
+ * DELETE /api/service-providers/:id/
+ */
+export const deleteServiceProviderAPI = async (providerId: number) => {
+  return apiRequest<void>(`/service-providers/${providerId}/`, {
+    method: 'DELETE',
+  });
+};
+
+// ==================== Products APIs ====================
+
+/**
+ * الحصول على جميع Products
+ * GET /api/products/
+ */
+export const getProductsAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/products/');
+};
+
+/**
+ * إنشاء Product جديد
+ * POST /api/products/
+ */
+export const createProductAPI = async (productData: any) => {
+  return apiRequest<any>('/products/', {
+    method: 'POST',
+    body: JSON.stringify(productData),
+  });
+};
+
+/**
+ * تحديث Product
+ * PUT /api/products/:id/
+ */
+export const updateProductAPI = async (productId: number, productData: any) => {
+  return apiRequest<any>(`/products/${productId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(productData),
+  });
+};
+
+/**
+ * حذف Product
+ * DELETE /api/products/:id/
+ */
+export const deleteProductAPI = async (productId: number) => {
+  return apiRequest<void>(`/products/${productId}/`, {
+    method: 'DELETE',
+  });
+};
+
+/**
+ * الحصول على جميع Product Categories
+ * GET /api/product-categories/
+ */
+export const getProductCategoriesAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/product-categories/');
+};
+
+/**
+ * إنشاء Product Category جديد
+ * POST /api/product-categories/
+ */
+export const createProductCategoryAPI = async (categoryData: any) => {
+  return apiRequest<any>('/product-categories/', {
+    method: 'POST',
+    body: JSON.stringify(categoryData),
+  });
+};
+
+/**
+ * تحديث Product Category
+ * PUT /api/product-categories/:id/
+ */
+export const updateProductCategoryAPI = async (categoryId: number, categoryData: any) => {
+  return apiRequest<any>(`/product-categories/${categoryId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(categoryData),
+  });
+};
+
+/**
+ * حذف Product Category
+ * DELETE /api/product-categories/:id/
+ */
+export const deleteProductCategoryAPI = async (categoryId: number) => {
+  return apiRequest<void>(`/product-categories/${categoryId}/`, {
+    method: 'DELETE',
+  });
+};
+
+/**
+ * الحصول على جميع Suppliers
+ * GET /api/suppliers/
+ */
+export const getSuppliersAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/suppliers/');
+};
+
+/**
+ * إنشاء Supplier جديد
+ * POST /api/suppliers/
+ */
+export const createSupplierAPI = async (supplierData: any) => {
+  return apiRequest<any>('/suppliers/', {
+    method: 'POST',
+    body: JSON.stringify(supplierData),
+  });
+};
+
+/**
+ * تحديث Supplier
+ * PUT /api/suppliers/:id/
+ */
+export const updateSupplierAPI = async (supplierId: number, supplierData: any) => {
+  return apiRequest<any>(`/suppliers/${supplierId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(supplierData),
+  });
+};
+
+/**
+ * حذف Supplier
+ * DELETE /api/suppliers/:id/
+ */
+export const deleteSupplierAPI = async (supplierId: number) => {
+  return apiRequest<void>(`/suppliers/${supplierId}/`, {
+    method: 'DELETE',
+  });
+};
+
+// ==================== Campaigns APIs ====================
+
+/**
+ * الحصول على جميع Campaigns
+ * GET /api/campaigns/
+ */
+export const getCampaignsAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/campaigns/');
+};
+
+/**
+ * إنشاء Campaign جديد
+ * POST /api/campaigns/
+ */
+export const createCampaignAPI = async (campaignData: any) => {
+  return apiRequest<any>('/campaigns/', {
+    method: 'POST',
+    body: JSON.stringify(campaignData),
+  });
+};
+
+/**
+ * حذف Campaign
+ * DELETE /api/campaigns/:id/
+ */
+export const deleteCampaignAPI = async (campaignId: number) => {
+  return apiRequest<void>(`/campaigns/${campaignId}/`, {
+    method: 'DELETE',
+  });
+};
+
+// ==================== Tasks/Activities APIs ====================
+
+/**
+ * الحصول على جميع Tasks
+ * GET /api/tasks/
+ */
+export const getTasksAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/tasks/');
+};
+
+/**
+ * إنشاء Task جديد
+ * POST /api/tasks/
+ */
+export const createTaskAPI = async (taskData: any) => {
+  return apiRequest<any>('/tasks/', {
+    method: 'POST',
+    body: JSON.stringify(taskData),
+  });
+};
+
+/**
+ * تحديث Task
+ * PUT /api/tasks/:id/
+ */
+export const updateTaskAPI = async (taskId: number, taskData: any) => {
+  return apiRequest<any>(`/tasks/${taskId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(taskData),
+  });
+};
+
+/**
+ * حذف Task
+ * DELETE /api/tasks/:id/
+ */
+export const deleteTaskAPI = async (taskId: number) => {
+  return apiRequest<void>(`/tasks/${taskId}/`, {
+    method: 'DELETE',
+  });
+};
+
+// ==================== Integrations APIs ====================
+
+/**
+ * TODO: استدعاء API للحصول على Connected Accounts
+ * مثال:
+ * GET /integrations/accounts
+ * Query params: ?platform=meta (أو tiktok أو whatsapp)
+ * Response: Account[]
+ */
+export const getConnectedAccountsAPI = async (platform?: string) => {
+  const query = platform ? `?platform=${platform}` : '';
+  return apiRequest<any[]>(`/integrations/accounts${query}`);
+};
+
+/**
+ * TODO: استدعاء API لإضافة Connected Account
+ * مثال:
+ * POST /integrations/accounts
+ * Body: { platform: 'meta', name: string, link?: string, phone?: string, status: string }
+ */
+export const createConnectedAccountAPI = async (accountData: any) => {
+  return apiRequest<any>('/integrations/accounts', {
+    method: 'POST',
+    body: JSON.stringify(accountData),
+  });
+};
+
+/**
+ * TODO: استدعاء API لتحديث Connected Account
+ * مثال:
+ * PUT /integrations/accounts/:id
+ */
+export const updateConnectedAccountAPI = async (accountId: number, accountData: any) => {
+  return apiRequest<any>(`/integrations/accounts/${accountId}`, {
+    method: 'PUT',
+    body: JSON.stringify(accountData),
+  });
+};
+
+/**
+ * TODO: استدعاء API لحذف Connected Account
+ * مثال:
+ * DELETE /integrations/accounts/:id
+ */
+export const deleteConnectedAccountAPI = async (accountId: number) => {
+  return apiRequest<void>(`/integrations/accounts/${accountId}`, {
+    method: 'DELETE',
+  });
+};
+
+// ==================== Activities/Tasks APIs ====================
+
+/**
+ * الحصول على Tasks (Activities في Frontend)
+ * GET /api/tasks/
+ * Query params: ?deal=xxx&stage=xxx&search=xxx
+ * Response: { count, next, previous, results: Task[] }
+ */
+export const getActivitiesAPI = async (filters?: any) => {
+  const queryParams = new URLSearchParams();
+  if (filters?.deal) queryParams.append('deal', filters.deal);
+  if (filters?.stage) queryParams.append('stage', filters.stage);
+  if (filters?.search) queryParams.append('search', filters.search);
+  
+  const queryString = queryParams.toString();
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>(`/tasks/${queryString ? `?${queryString}` : ''}`);
+};
+
+/**
+ * إنشاء Task جديد (Activity)
+ * POST /api/tasks/
+ * Body: { deal, stage, notes, reminder_date }
+ */
+export const createActivityAPI = async (activityData: any) => {
+  return apiRequest<any>('/tasks/', {
+    method: 'POST',
+    body: JSON.stringify(activityData),
+  });
+};
+
+// ==================== Client Tasks APIs (Actions for Leads) ====================
+
+/**
+ * الحصول على جميع Client Tasks (Actions)
+ * GET /api/client-tasks/
+ */
+export const getClientTasksAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/client-tasks/');
+};
+
+/**
+ * إنشاء Client Task جديد (Action)
+ * POST /api/client-tasks/
+ * Body: { client, stage, notes, reminder_date }
+ */
+export const createClientTaskAPI = async (clientTaskData: any) => {
+  return apiRequest<any>('/client-tasks/', {
+    method: 'POST',
+    body: JSON.stringify(clientTaskData),
+  });
+};
+
+/**
+ * تحديث Client Task
+ * PUT /api/client-tasks/{id}/
+ */
+export const updateClientTaskAPI = async (clientTaskId: number, clientTaskData: any) => {
+  return apiRequest<any>(`/client-tasks/${clientTaskId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(clientTaskData),
+  });
+};
+
+/**
+ * حذف Client Task
+ * DELETE /api/client-tasks/{id}/
+ */
+export const deleteClientTaskAPI = async (clientTaskId: number) => {
+  const token = localStorage.getItem('accessToken');
+  const response = await fetch(`${BASE_URL}/client-tasks/${clientTaskId}/`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
+  if (response.status === 401) {
+    try {
+      await refreshTokenAPI();
+      return deleteClientTaskAPI(clientTaskId);
+    } catch (refreshError) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('currentUser');
+      window.location.href = '/';
+      throw new Error('Session expired. Please login again.');
+    }
+  }
+
+  if (!response.ok && response.status !== 204) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || errorData.message || `API Error: ${response.status} ${response.statusText}`);
+  }
+};
+
+// ==================== Todos APIs ====================
+// TODO: يمكن استخدام Tasks API للـ Todos أيضاً، أو إضافة endpoint منفصل
+
+/**
+ * الحصول على Todos (يمكن استخدام Tasks API)
+ * GET /api/tasks/
+ */
+export const getTodosAPI = async () => {
+  return apiRequest<{ count: number; next: string | null; previous: string | null; results: any[] }>('/tasks/');
+};
+
+export const createTodoAPI = async (todoData: any) => {
+  return apiRequest<any>('/tasks/', {
+    method: 'POST',
+    body: JSON.stringify(todoData),
+  });
+};
+
+// ==================== Settings APIs ====================
+
+/**
+ * TODO: استدعاء API للحصول على Channels
+ * مثال:
+ * GET /settings/channels
+ */
+export const getChannelsAPI = async () => {
+  return apiRequest<any[]>('/settings/channels/');
+};
+
+export const createChannelAPI = async (channelData: any) => {
+  return apiRequest<any>('/settings/channels/', {
+    method: 'POST',
+    body: JSON.stringify(channelData),
+  });
+};
+
+export const updateChannelAPI = async (channelId: number, channelData: any) => {
+  return apiRequest<any>(`/settings/channels/${channelId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(channelData),
+  });
+};
+
+export const deleteChannelAPI = async (channelId: number) => {
+  return apiRequest<void>(`/settings/channels/${channelId}/`, {
+    method: 'DELETE',
+  });
+};
+
+/**
+ * TODO: استدعاء API للحصول على Stages
+ * مثال:
+ * GET /settings/stages
+ */
+export const getStagesAPI = async () => {
+  return apiRequest<any[]>('/settings/stages/');
+};
+
+export const createStageAPI = async (stageData: any) => {
+  return apiRequest<any>('/settings/stages/', {
+    method: 'POST',
+    body: JSON.stringify(stageData),
+  });
+};
+
+export const updateStageAPI = async (stageId: number, stageData: any) => {
+  return apiRequest<any>(`/settings/stages/${stageId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(stageData),
+  });
+};
+
+export const deleteStageAPI = async (stageId: number) => {
+  return apiRequest<void>(`/settings/stages/${stageId}/`, {
+    method: 'DELETE',
+  });
+};
+
+/**
+ * TODO: استدعاء API للحصول على Statuses
+ * مثال:
+ * GET /settings/statuses
+ */
+export const getStatusesAPI = async () => {
+  return apiRequest<any[]>('/settings/statuses/');
+};
+
+export const createStatusAPI = async (statusData: any) => {
+  return apiRequest<any>('/settings/statuses/', {
+    method: 'POST',
+    body: JSON.stringify(statusData),
+  });
+};
+
+export const updateStatusAPI = async (statusId: number, statusData: any) => {
+  return apiRequest<any>(`/settings/statuses/${statusId}/`, {
+    method: 'PUT',
+    body: JSON.stringify(statusData),
+  });
+};
+
+export const deleteStatusAPI = async (statusId: number) => {
+  return apiRequest<void>(`/settings/statuses/${statusId}/`, {
+    method: 'DELETE',
+  });
+};
+
+
+

@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
-import { Sidebar, Header, PageWrapper, AddLeadModal, AddActionModal, AssignLeadModal, FilterDrawer, AddDeveloperModal, AddProjectModal, AddUnitModal, UnitsFilterDrawer, AddOwnerModal, EditOwnerModal, DealsFilterDrawer, AddUserModal, EditUserModal, DeleteUserModal, AddCampaignModal, ManageIntegrationAccountModal, ChangePasswordModal, EditDeveloperModal, EditProjectModal } from './components/index';
-import { ActivitiesPage, CampaignsPage, CreateDealPage, DashboardPage, DealsPage, EmployeesReportPage, IntegrationsPage, LeadsPage, LoginPage, MarketingReportPage, OwnersPage, ProfilePage, PropertiesPage, SettingsPage, TeamsReportPage, TodosPage, UsersPage, ViewLeadPage, ServicesInventoryPage, ProductsInventoryPage, ServicesPage, ServicePackagesPage, ServiceProvidersPage, ProductsPage, ProductCategoriesPage, SuppliersPage } from './pages';
+import { Sidebar, Header, PageWrapper, AddLeadModal, EditLeadModal, AddActionModal, AssignLeadModal, FilterDrawer, AddDeveloperModal, AddProjectModal, AddUnitModal, UnitsFilterDrawer, AddOwnerModal, EditOwnerModal, DealsFilterDrawer, AddUserModal, ViewUserModal, EditUserModal, DeleteUserModal, AddCampaignModal, ManageIntegrationAccountModal, ChangePasswordModal, EditDeveloperModal, DeleteDeveloperModal, ConfirmDeleteModal, EditProjectModal, EditUnitModal, AddTodoModal, AddServiceModal, EditServiceModal, AddServicePackageModal, EditServicePackageModal, AddServiceProviderModal, EditServiceProviderModal, AddProductModal, EditProductModal, AddProductCategoryModal, EditProductCategoryModal, AddSupplierModal, EditSupplierModal } from './components/index';
+import { ActivitiesPage, CampaignsPage, CreateDealPage, DashboardPage, DealsPage, EmployeesReportPage, IntegrationsPage, LeadsPage, LoginPage, RegisterPage, MarketingReportPage, OwnersPage, ProfilePage, PropertiesPage, SettingsPage, TeamsReportPage, TodosPage, UsersPage, ViewLeadPage, ServicesInventoryPage, ProductsInventoryPage, ServicesPage, ServicePackagesPage, ServiceProvidersPage, ProductsPage, ProductCategoriesPage, SuppliersPage } from './pages';
 
 const CurrentPageContent = () => {
     const { currentPage } = useAppContext();
@@ -73,53 +73,102 @@ const CurrentPageContent = () => {
 }
 
 const TheApp = () => {
-    const { isLoggedIn, language, isSidebarOpen, setIsSidebarOpen } = useAppContext();
+    const { isLoggedIn, language, isSidebarOpen, setIsSidebarOpen, isConfirmDeleteModalOpen, setIsConfirmDeleteModalOpen, confirmDeleteConfig, setConfirmDeleteConfig, currentPage } = useAppContext();
     
+    // Ensure document direction is set on mount and when language changes
+    React.useEffect(() => {
+        document.documentElement.lang = language;
+        document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    }, [language]);
+    
+    // Handle routing for login and register pages
     if (!isLoggedIn) {
+        const pathname = window.location.pathname;
+        
+        // Show register page if on /register route
+        if (pathname === '/register' || currentPage === 'Register') {
+            return <RegisterPage />;
+        }
+        
+        // Show login page if on /login route or root
+        if (pathname === '/login' || pathname === '/' || pathname === '' || currentPage === 'Login') {
+            return <LoginPage />;
+        }
+        
+        // Redirect any other route to login
+        window.history.replaceState({}, '', '/login');
         return <LoginPage />;
     }
 
     return (
-        <div className={`${language === 'ar' ? 'font-arabic' : 'font-sans'} bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100`}>
-            <div className="relative min-h-screen">
-                <Sidebar />
-                {isSidebarOpen && (
-                    <div
-                        className="fixed inset-0 bg-black/60 z-30 lg:hidden"
-                        aria-hidden="true"
-                        onClick={() => setIsSidebarOpen(false)}
-                    ></div>
-                )}
-                <div className="flex flex-col flex-1 lg:ms-64">
-                    <Header />
-                    <main className="flex-1 overflow-y-auto">
-                        <CurrentPageContent />
-                    </main>
-                </div>
-                {/* Global Modals & Drawers */}
-                <AddLeadModal />
-                <AddActionModal />
-                <AssignLeadModal />
-                <FilterDrawer />
-                <UnitsFilterDrawer />
-                <DealsFilterDrawer />
-                <AddDeveloperModal />
-                <AddProjectModal />
-                <AddUnitModal />
-                <AddOwnerModal />
-                <EditOwnerModal />
-                <EditDeveloperModal />
-                <EditProjectModal />
-                <AddUserModal />
-                <EditUserModal />
-                <DeleteUserModal />
-                <AddCampaignModal />
-                <ManageIntegrationAccountModal />
-                <ChangePasswordModal />
+        <div className={`flex h-screen ${language === 'ar' ? 'font-arabic' : 'font-sans'} bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300`}>
+            <Sidebar />
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 z-30 md:hidden"
+                    aria-hidden="true"
+                    onClick={() => setIsSidebarOpen(false)}
+                ></div>
+            )}
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <Header />
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900">
+                    <CurrentPageContent />
+                </main>
             </div>
+            {/* Global Modals & Drawers */}
+            <AddLeadModal />
+            <EditLeadModal />
+            <AddActionModal />
+            <AssignLeadModal />
+            <FilterDrawer />
+            <UnitsFilterDrawer />
+            <DealsFilterDrawer />
+            <AddDeveloperModal />
+            <AddProjectModal />
+            <AddUnitModal />
+            <AddOwnerModal />
+            <EditOwnerModal />
+            <EditDeveloperModal />
+            <DeleteDeveloperModal />
+            {confirmDeleteConfig && (
+                <ConfirmDeleteModal
+                    isOpen={isConfirmDeleteModalOpen}
+                    onClose={() => {
+                        setIsConfirmDeleteModalOpen(false);
+                        setConfirmDeleteConfig(null);
+                    }}
+                    onConfirm={confirmDeleteConfig.onConfirm}
+                    title={confirmDeleteConfig.title}
+                    message={confirmDeleteConfig.message}
+                    itemName={confirmDeleteConfig.itemName}
+                />
+            )}
+            <EditProjectModal />
+            <EditUnitModal />
+            <AddUserModal />
+            <ViewUserModal />
+            <EditUserModal />
+            <DeleteUserModal />
+            <AddCampaignModal />
+            <ManageIntegrationAccountModal />
+            <ChangePasswordModal />
+            <AddTodoModal />
+            <AddServiceModal />
+            <EditServiceModal />
+            <AddServicePackageModal />
+            <EditServicePackageModal />
+            <AddServiceProviderModal />
+            <EditServiceProviderModal />
+            <AddProductModal />
+            <EditProductModal />
+            <AddProductCategoryModal />
+            <EditProductCategoryModal />
+            <AddSupplierModal />
+            <EditSupplierModal />
         </div>
-    );
-};
+        );
+    };
 
 
 function App() {

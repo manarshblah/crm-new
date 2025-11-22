@@ -1,10 +1,9 @@
 
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // FIX: Corrected component import path to avoid conflict with `components.tsx`.
 import { Card, Button, Input, ToggleSwitch, TrashIcon, PlusIcon, Modal } from '../../components/index';
-import { MOCK_CHANNELS } from '../../constants';
 import { Channel } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 
@@ -15,20 +14,31 @@ const Label = ({ children, htmlFor }: { children?: React.ReactNode; htmlFor?: st
 
 // FIX: Made children optional to fix missing children prop error.
 const Select = ({ id, children, value, onChange }: { id: string; children?: React.ReactNode, value?: string, onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void }) => (
-    <select id={id} value={value} onChange={onChange} className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+    <select id={id} value={value} onChange={onChange} className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-gray-100">
         {children}
     </select>
 );
 
 
 export const ChannelsSettings = () => {
-    const { t } = useAppContext();
+    const { t, channels, addChannel, updateChannel, deleteChannel, setConfirmDeleteConfig, setIsConfirmDeleteModalOpen } = useAppContext();
     const [multiChannel, setMultiChannel] = useState(true);
-    const [channels, setChannels] = useState<Channel[]>(MOCK_CHANNELS);
-    const [defaultChannel, setDefaultChannel] = useState('Website');
+    const [defaultChannel, setDefaultChannel] = useState('');
     const [channelTypes, setChannelTypes] = useState<string[]>(['advertising', 'email', 'Web', 'Social']);
     const [isAddTypeModalOpen, setIsAddTypeModalOpen] = useState(false);
     const [newTypeName, setNewTypeName] = useState('');
+    const [editingChannels, setEditingChannels] = useState<{ [key: number]: Partial<Channel> }>({});
+    const [updateTimeouts, setUpdateTimeouts] = useState<{ [key: number]: NodeJS.Timeout }>({});
+
+    // Extract unique types from channels
+    React.useEffect(() => {
+        const types = new Set<string>();
+        channels.forEach(c => types.add(c.type));
+        setChannelTypes(prev => {
+            const combined = new Set([...prev, ...Array.from(types)]);
+            return Array.from(combined);
+        });
+    }, [channels]);
 
     const handleAddType = () => {
         if (newTypeName && !channelTypes.includes(newTypeName)) {
@@ -38,22 +48,70 @@ export const ChannelsSettings = () => {
         }
     };
     
-    const handleChannelChange = (id: number, field: keyof Channel, value: any) => {
-        setChannels(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
+    const handleChannelChange = async (id: number, field: keyof Channel, value: any, immediate: boolean = false) => {
+        const channel = channels.find(c => c.id === id);
+        if (!channel) return;
+
+        // Update local state immediately
+        setEditingChannels(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+
+        if (immediate) {
+            // Update immediately (for selects)
+            const updatedChannel = { ...channel, [field]: value };
+            try {
+                await updateChannel(updatedChannel);
+            } catch (error) {
+                console.error('Error updating channel:', error);
+            }
+        } else {
+            // Debounce for text inputs
+            if (updateTimeouts[id]) {
+                clearTimeout(updateTimeouts[id]);
+            }
+            
+            const timeout = setTimeout(async () => {
+                const updatedChannel = { ...channel, [field]: value };
+                try {
+                    await updateChannel(updatedChannel);
+                } catch (error) {
+                    console.error('Error updating channel:', error);
+                }
+            }, 500);
+            
+            setUpdateTimeouts(prev => ({ ...prev, [id]: timeout }));
+        }
     };
 
-    const handleAddChannel = () => {
-        const newChannel: Channel = {
-            id: Date.now(),
-            name: '',
-            type: channelTypes[0] || '',
-            priority: 'Medium',
-        };
-        setChannels(prev => [...prev, newChannel]);
+    const handleAddChannel = async () => {
+        try {
+            await addChannel({
+                name: '',
+                type: channelTypes[0] || '',
+                priority: 'Medium',
+            });
+        } catch (error) {
+            console.error('Error adding channel:', error);
+        }
     };
 
     const handleDeleteChannel = (id: number) => {
-        setChannels(prev => prev.filter(c => c.id !== id));
+        const channel = channels.find(c => c.id === id);
+        if (channel) {
+            setConfirmDeleteConfig({
+                title: t('deleteChannel') || 'Delete Channel',
+                message: t('confirmDeleteChannel') || 'Are you sure you want to delete',
+                itemName: channel.name,
+                onConfirm: async () => {
+                    try {
+                        await deleteChannel(id);
+                    } catch (error) {
+                        console.error('Error deleting channel:', error);
+                        throw error;
+                    }
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
+        }
     };
 
     return (
@@ -87,7 +145,7 @@ export const ChannelsSettings = () => {
                         <Select id="default-channel" value={defaultChannel} onChange={(e) => setDefaultChannel(e.target.value)}>
                             {channels.map(c => <option key={c.id}>{c.name}</option>)}
                         </Select>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('defaultChannelDesc')}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{t('defaultChannelDesc')}</p>
                      </div>
                  </div>
             </Card>
@@ -102,7 +160,7 @@ export const ChannelsSettings = () => {
                 </div>
                  <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                        <thead className="text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                        <thead className="text-left rtl:text-right text-gray-700 dark:text-gray-300">
                             <tr>
                                 <th className="p-2 min-w-[200px]">{t('name')}</th>
                                 <th className="p-2 min-w-[150px]">{t('type')}</th>
@@ -115,16 +173,16 @@ export const ChannelsSettings = () => {
                                 <tr key={channel.id} className="border-t dark:border-gray-700">
                                     <td className="p-2 font-medium">
                                         <Input
-                                            value={channel.name}
-                                            onChange={(e) => handleChannelChange(channel.id, 'name', e.target.value)}
+                                            value={editingChannels[channel.id]?.name !== undefined ? editingChannels[channel.id].name : channel.name}
+                                            onChange={(e) => handleChannelChange(channel.id, 'name', e.target.value, false)}
                                             className="text-sm"
                                         />
                                     </td>
                                     <td className="p-2">
                                         <Select
                                             id={`type-${channel.id}`}
-                                            value={channel.type}
-                                            onChange={(e) => handleChannelChange(channel.id, 'type', e.target.value)}
+                                            value={editingChannels[channel.id]?.type !== undefined ? editingChannels[channel.id].type : channel.type}
+                                            onChange={(e) => handleChannelChange(channel.id, 'type', e.target.value, true)}
                                         >
                                             {channelTypes.map(type => <option key={type} value={type}>{type}</option>)}
                                         </Select>
@@ -132,8 +190,8 @@ export const ChannelsSettings = () => {
                                     <td className="p-2">
                                         <Select
                                             id={`priority-${channel.id}`}
-                                            value={channel.priority}
-                                            onChange={(e) => handleChannelChange(channel.id, 'priority', e.target.value as Channel['priority'])}
+                                            value={editingChannels[channel.id]?.priority !== undefined ? editingChannels[channel.id].priority : channel.priority}
+                                            onChange={(e) => handleChannelChange(channel.id, 'priority', e.target.value as Channel['priority'], true)}
                                         >
                                             <option>High</option>
                                             <option>Medium</option>

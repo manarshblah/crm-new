@@ -53,10 +53,25 @@ const OwnersTable = ({ owners, onEdit, onDelete }: { owners: Owner[], onEdit: (o
 
 
 export const OwnersPage = () => {
-    const { t, currentUser, setIsAddOwnerModalOpen, owners, deleteOwner, setEditingOwner, setIsEditOwnerModalOpen } = useAppContext();
+    const { t, currentUser, setIsAddOwnerModalOpen, owners, deleteOwner, setEditingOwner, setIsEditOwnerModalOpen, setConfirmDeleteConfig, setIsConfirmDeleteModalOpen } = useAppContext();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // TODO: استدعي API لتحميل Owners عند فتح الصفحة (لشركات العقارات فقط)
+        // مثال:
+        // const loadOwners = async () => {
+        //   try {
+        //     const ownersData = await getOwnersAPI();
+        //     // TODO: استخدم setOwners من AppContext لتحديث البيانات
+        //   } catch (error) {
+        //     console.error('Error loading owners:', error);
+        //   } finally {
+        //     setLoading(false);
+        //   }
+        // };
+        // if (isRealEstate) loadOwners();
+        
+        // الكود الحالي (للاختبار فقط):
         const timer = setTimeout(() => setLoading(false), 1000);
         return () => clearTimeout(timer);
     }, []);
@@ -83,8 +98,17 @@ export const OwnersPage = () => {
     };
 
     const handleDelete = (id: number) => {
-        if(window.confirm(t('confirmDelete'))) {
-            deleteOwner(id);
+        const owner = owners.find(o => o.id === id);
+        if (owner) {
+            setConfirmDeleteConfig({
+                title: t('deleteOwner') || 'Delete Owner',
+                message: t('confirmDeleteOwner') || 'Are you sure you want to delete',
+                itemName: owner.name,
+                onConfirm: async () => {
+                    await deleteOwner(id);
+                },
+            });
+            setIsConfirmDeleteModalOpen(true);
         }
     };
 
