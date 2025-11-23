@@ -79,6 +79,8 @@ export const translations = {
         stages: "Stages",
         statuses: "Statuses",
         logout: "Logout",
+        logoutConfirmTitle: "Confirm Logout",
+        logoutConfirmMessage: "Are you sure you want to log out?",
         // Dashboard
         todayNewLeads: "Today New Leads",
         todayTouchedLeads: "Today Touched Leads",
@@ -613,6 +615,8 @@ export const translations = {
         stages: "المراحل",
         statuses: "الحالات",
         logout: "تسجيل الخروج",
+        logoutConfirmTitle: "تأكيد تسجيل الخروج",
+        logoutConfirmMessage: "هل أنت متأكد أنك تريد تسجيل الخروج؟",
         // Dashboard
         todayNewLeads: "عملاء محتملون جدد اليوم",
         todayTouchedLeads: "عملاء تم التواصل معهم اليوم",
