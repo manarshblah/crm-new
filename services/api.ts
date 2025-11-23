@@ -2,10 +2,10 @@
  * API Service
  * 
  * هذا الملف يحتوي على جميع استدعاءات API
- * TODO: تأكد من أن API يعمل على هذا الرابط (افتراضي: http://localhost:8000)
+ * TODO: تأكد من أن API يعمل على هذا الرابط (افتراضي: https://haidaraib.pythonanywhere.com)
  */
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const BASE_URL = process.env.REACT_APP_API_URL || 'https://haidaraib.pythonanywhere.com/api';
 
 /**
  * Helper function to make API requests
@@ -130,6 +130,7 @@ export const registerCompanyAPI = async (data: {
     email: string;
     username: string;
     password: string;
+    phone?: string;
   };
   plan_id?: number | null;
   billing_cycle?: 'monthly' | 'yearly';
@@ -383,7 +384,7 @@ export const updateDeveloperAPI = async (developerId: number, developerData: any
  */
 export const deleteDeveloperAPI = async (developerId: number) => {
   const token = localStorage.getItem('accessToken');
-  const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+  const BASE_URL = process.env.REACT_APP_API_URL || 'https://haidaraib.pythonanywhere.com/api';
   
   const response = await fetch(`${BASE_URL}/developers/${developerId}/`, {
     method: 'DELETE',
@@ -438,7 +439,7 @@ export const updateProjectAPI = async (projectId: number, projectData: any) => {
  */
 export const deleteProjectAPI = async (projectId: number) => {
   const token = localStorage.getItem('accessToken');
-  const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+  const BASE_URL = process.env.REACT_APP_API_URL || 'https://haidaraib.pythonanywhere.com/api';
   
   const response = await fetch(`${BASE_URL}/projects/${projectId}/`, {
     method: 'DELETE',

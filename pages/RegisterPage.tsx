@@ -5,7 +5,7 @@ import { Button, Input, EyeIcon, EyeOffIcon, MoonIcon, SunIcon } from '../compon
 import { registerCompanyAPI } from '../services/api';
 
 export const RegisterPage = () => {
-    const { setIsLoggedIn, setCurrentUser, t, language, setCurrentPage, theme, setTheme } = useAppContext();
+    const { setIsLoggedIn, setCurrentUser, t, language, setLanguage, setCurrentPage, theme, setTheme } = useAppContext();
     
     // Company information
     const [companyName, setCompanyName] = useState('');
@@ -17,6 +17,7 @@ export const RegisterPage = () => {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     
@@ -71,6 +72,12 @@ export const RegisterPage = () => {
             newErrors.username = t('usernameMinLength') || 'Username must be at least 3 characters';
         }
         
+        if (!phone.trim()) {
+            newErrors.phone = t('phoneRequired') || 'Phone is required';
+        } else if (!/^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/.test(phone.trim())) {
+            newErrors.phone = t('invalidPhone') || 'Invalid phone number format';
+        }
+        
         if (!password.trim()) {
             newErrors.password = t('passwordRequired') || 'Password is required';
         } else if (password.length < 8) {
@@ -123,6 +130,7 @@ export const RegisterPage = () => {
                     email: email,
                     username: username,
                     password: password,
+                    phone: phone.trim(),
                 },
                 plan_id: selectedPlan,
                 billing_cycle: billingCycle,
@@ -135,7 +143,7 @@ export const RegisterPage = () => {
                 username: response.user.username,
                 email: response.user.email,
                 role: 'Owner',
-                phone: '',
+                phone: response.user.phone || phone.trim(),
                 avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(response.user.username)}&background=random`,
                 company: {
                     id: response.company.id,
@@ -176,8 +184,15 @@ export const RegisterPage = () => {
 
     return (
         <div className={`min-h-screen flex ${language === 'ar' ? 'font-arabic' : 'font-sans'} relative`}>
-            {/* Theme Toggle Button */}
-            <div className="absolute top-4 end-4 z-10">
+            {/* Theme and Language Toggle Buttons */}
+            <div className="absolute top-4 end-4 z-10 flex gap-2">
+                <button
+                    onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+                    className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                    aria-label={`Switch to ${language === 'ar' ? 'English' : 'Arabic'}`}
+                >
+                    <span className="font-bold text-sm">{language === 'ar' ? 'EN' : 'AR'}</span>
+                </button>
                 <Button variant="ghost" className="p-2 h-auto" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
                     {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
                 </Button>
@@ -421,6 +436,32 @@ export const RegisterPage = () => {
                                     />
                                     {errors.username && (
                                         <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.username}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label htmlFor="phone" className="block text-sm font-medium text-secondary mb-1">
+                                        {t('phone') || 'Phone'} <span className="text-red-500">*</span>
+                                    </label>
+                                    <Input
+                                        id="phone"
+                                        type="tel"
+                                        placeholder={t('enterPhone') || 'Enter phone number'}
+                                        value={phone}
+                                        onChange={(e) => {
+                                            setPhone(e.target.value);
+                                            if (errors.phone) {
+                                                setErrors(prev => {
+                                                    const newErrors = { ...prev };
+                                                    delete newErrors.phone;
+                                                    return newErrors;
+                                                });
+                                            }
+                                        }}
+                                        className={errors.phone ? 'border-red-500' : ''}
+                                    />
+                                    {errors.phone && (
+                                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.phone}</p>
                                     )}
                                 </div>
 

@@ -5,12 +5,32 @@ import { Button, Input, EyeIcon, EyeOffIcon, MoonIcon, SunIcon } from '../compon
 import { loginAPI, getCurrentUserAPI } from '../services/api';
 
 export const LoginPage = () => {
-    const { setIsLoggedIn, setCurrentUser, setCurrentPage, t, language, theme, setTheme } = useAppContext();
+    const { setIsLoggedIn, setCurrentUser, setCurrentPage, t, language, setLanguage, theme, setTheme } = useAppContext();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const translateLoginError = (errorMessage: string): string => {
+        const lowerMessage = errorMessage.toLowerCase();
+        
+        if (lowerMessage.includes('no active account') || lowerMessage.includes('active account')) {
+            return t('loginErrorNoActiveAccount') || 'No active account found with the given credentials';
+        }
+        if (lowerMessage.includes('unable to log in') || lowerMessage.includes('unable to login')) {
+            return t('loginErrorUnableToLogin') || 'Unable to log in with provided credentials';
+        }
+        if (lowerMessage.includes('account is inactive') || lowerMessage.includes('inactive')) {
+            return t('loginErrorAccountInactive') || 'Account is inactive';
+        }
+        if (lowerMessage.includes('invalid') || lowerMessage.includes('incorrect')) {
+            return t('loginErrorInvalidCredentials') || 'Invalid username or password';
+        }
+        
+        // Default fallback
+        return t('invalidCredentials') || 'Invalid username or password';
+    };
 
     const handleLogin = async () => {
         setError('');
@@ -51,15 +71,23 @@ export const LoginPage = () => {
             window.history.replaceState({}, '', '/');
             setCurrentPage('Dashboard');
         } catch (error: any) {
-            setError(error.message || t('invalidCredentials') || 'Invalid username or password');
+            const errorMessage = error.message || '';
+            setError(translateLoginError(errorMessage));
             setIsLoading(false);
         }
     };
 
     return (
         <div className={`min-h-screen flex ${language === 'ar' ? 'font-arabic' : 'font-sans'} relative`}>
-            {/* Theme Toggle Button */}
-            <div className="absolute top-4 end-4 z-10">
+            {/* Theme and Language Toggle Buttons */}
+            <div className="absolute top-4 end-4 z-10 flex gap-2">
+                <button
+                    onClick={() => setLanguage(language === 'en' ? 'ar' : 'en')}
+                    className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                    aria-label={`Switch to ${language === 'ar' ? 'English' : 'Arabic'}`}
+                >
+                    <span className="font-bold text-sm">{language === 'ar' ? 'EN' : 'AR'}</span>
+                </button>
                 <Button variant="ghost" className="p-2 h-auto" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
                     {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
                 </Button>
