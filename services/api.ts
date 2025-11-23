@@ -5,7 +5,7 @@
  * TODO: تأكد من أن API يعمل على هذا الرابط (افتراضي: https://haidaraib.pythonanywhere.com)
  */
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'https://haidaraib.pythonanywhere.com/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://haidaraib.pythonanywhere.com/api';
 
 /**
  * Helper function to make API requests
@@ -384,7 +384,6 @@ export const updateDeveloperAPI = async (developerId: number, developerData: any
  */
 export const deleteDeveloperAPI = async (developerId: number) => {
   const token = localStorage.getItem('accessToken');
-  const BASE_URL = process.env.REACT_APP_API_URL || 'https://haidaraib.pythonanywhere.com/api';
   
   const response = await fetch(`${BASE_URL}/developers/${developerId}/`, {
     method: 'DELETE',
@@ -439,7 +438,6 @@ export const updateProjectAPI = async (projectId: number, projectData: any) => {
  */
 export const deleteProjectAPI = async (projectId: number) => {
   const token = localStorage.getItem('accessToken');
-  const BASE_URL = process.env.REACT_APP_API_URL || 'https://haidaraib.pythonanywhere.com/api';
   
   const response = await fetch(`${BASE_URL}/projects/${projectId}/`, {
     method: 'DELETE',
