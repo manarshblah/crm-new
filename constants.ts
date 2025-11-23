@@ -526,6 +526,8 @@ export const translations = {
         createAccount: "Create Your Account",
         registerDescription: "Start managing your business with our powerful CRM system. Get started in minutes.",
         createCompanyAccount: "Create your company account",
+        registrationFailed: "Registration failed. Please try again.",
+        networkError: "Network error: Unable to connect to the server. Please check your internet connection and ensure the API server is accessible.",
         companyInformation: "Company Information",
         companyName: "Company Name",
         enterCompanyName: "Enter company name",
@@ -556,7 +558,6 @@ export const translations = {
         plansWillBeAdded: "Plans will be available after registration",
         back: "Back",
         next: "Next",
-        registrationFailed: "Registration failed. Please try again.",
     },
     ar: {
         hello: "أهلاً بك! 👋",
@@ -1090,5 +1091,6 @@ export const translations = {
         back: "رجوع",
         next: "التالي",
         registrationFailed: "فشل التسجيل. يرجى المحاولة مرة أخرى.",
+        networkError: "خطأ في الشبكة: تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت والتأكد من أن خادم API متاح.",
     }
 };
